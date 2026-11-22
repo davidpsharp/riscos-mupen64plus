@@ -231,5 +231,19 @@ RoMac disc has them in `!System.350.Modules`, and the throwaway disc now gets co
   set for every later program, and the dummy driver's sleep-based pacing looked like a slow device
   (27,900/s). Not yet heard by a person: David to listen.
 
-Next: the joypad (input-sdl), then the `!Mupen64Plus` app (Choices for saves and settings, sound
+**22 Nov 2026 (pi4-plato, native RISC OS 5.30, first try):**
+- The same binary runs. Interpreter and dynarec give the same RDRAM hashes as the Mac and RoMac on
+  the test ROMs. Mario with dummy video does 1200 VIs in 1.6 s (about 740 VI/s) on the dynarec.
+- Through the GPU (V3DRender 0.16, "V3D 4.2.14.0 - 2.1 Mesa 26.1.6") it hits the bug riscos-quake3
+  and riscos-doom3 hit: "MESA: error: Failed to allocate device memory for BO", then a segfault
+  (dump D3208). Every GPU buffer of 64 KB or more is refused on 5.30 (riscos-doom3
+  `docs/risc3d-issues.md`, bug 2, for Andy).
+- With `LIBGL_ALWAYS_SOFTWARE 1` Rice draws Mario in a desktop window at about 12-15 VI/s; 93% of
+  the time is the RSP plus Rice plus software Mesa.
+- No SharedSoundBuffer or StreamManager on the Pi: it runs silent.
+- Once, a run straight after the GPU crash died at start with "EMT trap, recursion in the abort
+  handler of ARMEABISupport"; the next run was fine.
+
+Next: the joypad (input-sdl: keyboard configured, but a Return tap didn't reach the game yet),
+then the `!Mupen64Plus` app (Choices for saves and settings, sound
 buffer defaults).
