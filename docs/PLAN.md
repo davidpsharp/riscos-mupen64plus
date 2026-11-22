@@ -288,8 +288,19 @@ Choices window with the cfg still editable, and save/load on the menu.
   from the menu, Choices during a game, stop.
 - File type: none is allocated for N64 ROMs (only &0D7 Game Boy); IXFS types files by
   extension through MimeMap, so a MimeMap line would make .z64/.v64/.n64 typed, once a type
-  is allocated by ROOL (David's call).
+  is allocated by ROOL. David (22 Nov): not now; on the backlog (section 10).
 - Known: full screen at a size with no matching mode (960x720) shows the picture in a corner.
 
-Next: a ROM file type (if allocated), the joypad (waiting on RoMac request 3). (Choices for saves and settings, sound
+Next: the joypad (waiting on RoMac request 3). (Choices for saves and settings, sound
 buffer defaults).
+
+## 10. Backlog
+
+Not now (David's call when to pick them up):
+- An N64 ROM file type (David, 22 Nov 2026: not for now). Ask ROOL to allocate one; then
+  `!Boot` sets its name and double-click action (as mGBA does for &0D7), and a MimeMap line for
+  .z64/.v64/.n64 types the files on RoMac's IXFS. Test with a restart: a live MimeMap change
+  didn't reach IXFS. Until then games start by dragging them to the icon.
+- Full screen at a size with no matching mode (960x720): centre the picture.
+- Alt+Enter also presses Start (Return is Start), as upstream.
+- pi5-octagon kernel question; the Pi 4 GPU (V3DRender bug); GLideN64.
