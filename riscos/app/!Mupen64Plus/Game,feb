@@ -1,0 +1,21 @@
+| Game for Mupen64Plus: run by the launcher (!RunImage) with a ROM's name (Unix form) to play it
+| in a desktop window. Arguments go to mupen64plus. Settings and saves are in
+| <Choices$Write>.Mupen64Plus; its output goes to stdout and stderr there.
+RMEnsure PThreadTicker 0.03 RMLoad <Mupen64Plus$Dir>.PThrTicker
+RMEnsure RISC3D 0.05 Error Mupen64Plus needs !RISC3D (RISC3D 0.05 or later) in !Boot.Resources, to draw with OpenGL
+
+| Sound: SharedSoundBuffer and StreamManager if they're in !System; silent without them.
+RMEnsure StreamManager 0.03 IfThere System:Modules.StreamMan Then RMLoad System:Modules.StreamMan
+RMEnsure SharedSoundBuffer 0.07 IfThere System:Modules.SSBuffer Then RMLoad System:Modules.SSBuffer
+
+| Settings and saves; the defaults the first time.
+CDir <Choices$Write>.Mupen64Plus
+CDir <Choices$Write>.Mupen64Plus.Saves
+IfThere <Choices$Write>.Mupen64Plus.mupen64plus/cfg Then Set Mupen64Plus$Choices yes Else Copy <Mupen64Plus$Dir>.Defaults.mupen64plus/cfg <Choices$Write>.Mupen64Plus.mupen64plus/cfg ~C~V
+CDir <Mupen64Plus$Dir>.Screenshots
+| UnixLib's names with a system variable in them, set without expanding it (|<)
+Set XDG_DATA_HOME /|<Choices$Write>/Mupen64Plus
+Set XDG_CACHE_HOME /|<Wimp$ScrapDir>
+
+WimpSlot -min 200000K -max 200000K
+Run <Mupen64Plus$Dir>.Mupen64 --configdir /<Choices$Write>/Mupen64Plus %*0 >/<Choices$Write>/Mupen64Plus/stdout 2>/<Choices$Write>/Mupen64Plus/stderr

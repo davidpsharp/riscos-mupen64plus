@@ -1,0 +1,13 @@
+| !Run for Mupen64Plus (Nintendo 64 emulator) on RISC OS: the launcher on the icon bar.
+| Drop an N64 ROM (.z64, .v64, .n64, or a zip of one) on its icon to play it in a desktop window.
+| The emulator itself is started by the launcher through the Obey file Game.
+Set Mupen64Plus$Dir <Obey$Dir>
+IconSprites <Mupen64Plus$Dir>.!Sprites
+
+RMEnsure SharedUnixLibrary 1.16 IfThere System:Modules.SharedULib Then RMLoad System:Modules.SharedULib
+RMEnsure SharedUnixLibrary 1.16 Error Mupen64Plus needs SharedUnixLibrary 1.16 or later (from PackMan)
+RMEnsure ARMEABISupport 1.03 IfThere System:Modules.ARMEABISupport Then RMLoad System:Modules.ARMEABISupport
+RMEnsure ARMEABISupport 1.03 Error Mupen64Plus needs ARMEABISupport 1.03 or later (from PackMan)
+
+WimpSlot -min 2048K -max 2048K
+Run <Mupen64Plus$Dir>.!RunImage %*0 2>/<Mupen64Plus$Dir>/launcherlog

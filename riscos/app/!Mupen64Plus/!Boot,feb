@@ -1,0 +1,3 @@
+| !Boot for Mupen64Plus: the icon, and where the app is.
+If "<Mupen64Plus$Dir>"="" Then Set Mupen64Plus$Dir <Obey$Dir>
+IconSprites <Obey$Dir>.!Sprites

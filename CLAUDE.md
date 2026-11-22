@@ -16,7 +16,9 @@ Build and test:
 - Mac (host tests): `cmake -S . -B build/mac -G Ninja && ninja -C build/mac`; run headless with
   `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` and `--gfx dummy` (never open windows on the Mac).
 - RISC OS: `docker build --platform linux/amd64 -t n64-riscos riscos/docker` once, then
-  `riscos/sdk.sh riscos/build.sh` -> `build/riscos/mupen64plus,ff8` (ELF with symbols beside it).
+  `riscos/sdk.sh riscos/build.sh` -> `build/riscos/mupen64plus,ff8` (ELF with symbols beside it);
+  `riscos/sdk.sh riscos/package.sh` -> the app, `build/riscos/app/!Mupen64Plus`
+  (sync it with `ro-run -t romac-n64 sync 'build/riscos/app/!Mupen64Plus' '!Mupen64Plus'`).
 - Test hooks (`src/n64_check.c`, env/system variables): `N64_HASHLOG`, `N64_SHOT`, `N64_QUITVI`,
   `N64_NOLIMIT`. Compare `vi N rdram H fb H` lines between platforms.
 - Test ROMs: PeterLemon/N64 (Unlicense) in `work/roms` (not in git).

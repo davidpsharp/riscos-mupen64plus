@@ -256,5 +256,17 @@ RISC OS driver scans the keyboard (OS_Byte 121), so keys must really be held (Ro
 - RoMac: use `~/code/rol-run/build-mac/RoMac.app` (0.1.229+, RISC3D merged; 0.1.230+ restarts
   headless runs on a reset, so `ro-run reboot` works).
 
-Next: the `!Mupen64Plus` app (Choices for saves and settings, sound
+**22 Nov 2026 (the app):** `!Mupen64Plus` (`riscos/app`, `riscos/launcher`, `riscos/package.sh`).
+- `!RunImage` is a small launcher (riscos-doom3's Wimp code: icon, menu with Info, Help and Quit,
+  Info window, message window). Drop a ROM (.z64/.v64/.n64 by its first bytes, or a zip) on the
+  icon: it runs `Game` with the ROM's Unix-form name, which runs `Mupen64` (the emulator) in a
+  desktop window titled "Mupen64Plus: <game>". A click offers the last ROM again. While a game
+  runs, the launcher's icon gives way to SDL's (which has Quit), and comes back when it ends.
+- Settings, saves and the emulator's log are in `<Choices$Write>.Mupen64Plus` (the default
+  `mupen64plus/cfg` is copied there the first time: plugins, paths as UnixLib `/<Var>/...` names,
+  screenshot key Insert into `!Mupen64Plus.Screenshots`, sound buffer target 4096).
+- Tested on RoMac by dragging from a Filer window: Mario and Zelda start, Insert and F5 write a
+  PNG and a save state, Escape or the close icon ends the game.
+
+Next: the `!Mupen64Plus` app, more (full-screen toggle, a ROM file type, Choices window?) (Choices for saves and settings, sound
 buffer defaults).

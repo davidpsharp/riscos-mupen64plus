@@ -128,7 +128,19 @@ bool COGLGraphicsContext::Initialize(uint32 dwWidth, uint32 dwHeight, BOOL bWind
 #endif
 
     char caption[500];
+#ifdef __riscos__
+    /* riscos-n64: the window is the game's, so its title is the game's name */
+    {
+        char name[64];
+        int n;
+        snprintf(name, sizeof(name), "%.20s", (char *) g_curRomInfo.szGameName);
+        for (n = (int) strlen(name); n > 0 && name[n - 1] == ' '; n--)
+            name[n - 1] = '\0';
+        snprintf(caption, sizeof(caption), "Mupen64Plus: %s", name[0] ? name : "N64");
+    }
+#else
     sprintf(caption, "%s v%i.%i.%i", PLUGIN_NAME, VERSION_PRINTF_SPLIT(PLUGIN_VERSION));
+#endif
     CoreVideo_SetCaption(caption);
     SetWindowMode();
 

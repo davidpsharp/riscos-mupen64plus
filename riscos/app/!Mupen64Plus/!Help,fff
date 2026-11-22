@@ -1,0 +1,51 @@
+Mupen64Plus for RISC OS
+=======================
+
+A Nintendo 64 emulator: mupen64plus 2.6 (core, Rice video, HLE RSP, SDL audio and input),
+ported to RISC OS 5. It draws with OpenGL through Andy Youll's RISC3D, on the GPU where
+RISC3D has one.
+
+Playing a game
+--------------
+Drop an N64 ROM on the icon bar icon: a .z64, .v64 or .n64 file, or a zip holding one.
+The game opens in a desktop window. Clicking the icon offers the last game played again.
+Close the window, or press Escape, to stop.
+
+You need your own ROMs: dump the cartridges you own. None come with this program.
+
+Keys (controller 1)
+-------------------
+  Arrow keys   analogue stick          Return       Start
+  Left Shift   A                       Left Ctrl    B
+  Z            Z trigger               X / C        L / R
+  W A S D      D-pad                   I J K L      C buttons
+The window must have the input focus (click on it). Other keys:
+  Escape       stop                    P            pause
+  F5 / F7      save / load state       0-9          state slot
+  F9           reset                   Insert       screenshot (into !Mupen64Plus.Screenshots)
+  F           fast forward             Y            speed limiter on/off
+
+Settings and saves
+------------------
+In <Choices$Write>.Mupen64Plus: mupen64plus/cfg (the settings, a text file), Saves (game
+saves and save states), and stdout and stderr (the emulator's log).
+
+Needs
+-----
+- RISC OS 5 on an ARMv7 machine with VFPv3 (a Raspberry Pi 2 or later), or RISC OS on Linux,
+  or RoMac.
+- !RISC3D 0.05 or later and !MesaLibs (riscos-mesa 20.3.5-22 or later) in !Boot.Resources.
+- SharedUnixLibrary and ARMEABISupport (from PackMan).
+- For sound: SharedSoundBuffer and StreamManager in !System. Without them it's silent.
+- About 200 MB of free memory.
+
+Known limits
+------------
+- On a Pi 4 with RISC OS 5.30, RISC3D's GPU driver (V3DRender 0.16) can't yet allocate the
+  buffers it needs, so set LIBGL_ALWAYS_SOFTWARE to 1 to draw in software (slowly).
+- No joystick yet: the keyboard only.
+
+Licence
+-------
+mupen64plus is GPL version 2; this port is too. Source: (to come).
+Ported by David Sharp.
