@@ -108,7 +108,10 @@ struct WindowBlock {
 void Create_Info_Window(void)
 {
 	static char version[64];
-	snprintf(version, sizeof(version), "%s (%s)", LAUNCHER_VERSION, __DATE__);
+	// the build date as "22 Nov 2026" (__DATE__ is "Nov 22 2026", the day padded with a space)
+	char const * date = __DATE__;
+	int day = atoi(date + 4);
+	snprintf(version, sizeof(version), "%s (%d %.3s %s)", LAUNCHER_VERSION, day, date, date + 7);
 	static struct {
 		WindowBlock w;
 		Icon icons[10];
