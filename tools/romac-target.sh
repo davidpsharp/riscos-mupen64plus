@@ -36,6 +36,7 @@ setup)
 	done
 	# Rorth: the newest release, its Config, and a PreDesk entry. crashdumps off: with Rorth's
 	# crash-dump hook on, GCC 10 programs die "EMT trap" at their first stack growth on RoMac
+	# (Rorth#28, fixed in 0.36.2: drop "crashdumps off" once that is in RORTH/dist)
 	rm -rf "$data/hd4/!Rorth"
 	python3 -I "$HOME/code/RORTH/tools/roszip.py" "$rorth_zip" "$data/hd4" >/dev/null
 	tok=$(python3 -c "import secrets; print(secrets.token_hex(12))")

@@ -25,7 +25,8 @@ Build and test:
   `riscos/test/stage.sh`, `ro-run -t romac-n64 sync work/stage/n64 n64`, and
   `ro-run -t romac-n64 cmd 'Obey n64.run-test CP1ADD.N64 tag 1 300 dummy'` (ROM names in Unix form).
   Desktop runs: `launch 'Obey IXFS:$.riscos.HardDisc4.Work.n64.run-test ...'` in a 16M-colour mode.
-- Rorth's `crashdumps` must be off on RoMac (setup does it): with it on, every GCC 10 program dies
+- Rorth's `crashdumps` must be off on RoMac with Rorth 0.36.1 or older (setup does it; fixed in 0.36.2,
+  Rorth#28, then drop the "off"): with it on, every GCC 10 program dies
   with "EMT trap" at its first stack growth.
 
 Rules (David, 2026-11-22):
