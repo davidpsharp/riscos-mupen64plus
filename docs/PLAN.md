@@ -203,5 +203,23 @@ Rice on the M3 Pro's GPU, through their intros (screenshots in `work/*-r3d*.png`
 - Speed (cached interpreter, average from boot): Mario 600 VIs in 88 s (about 7 VI/s, slower in 3D
   scenes); Zelda 1080 in 118 s (9); GoldenEye 1500 in 89 s (17). Full speed is 60: the dynarec next.
 
-Next: the dynarec (ARMv7 new_dynarec) and finding where time goes; audio and input; the
-`!Mupen64Plus` app (Choices for saves and settings).
+**22 Nov 2026 (speed): the ARMv7 dynarec runs on RoMac, and games run above full speed.**
+- new_dynarec (ARM backend) builds for RISC OS and is now the default there (`N64_DYNAREC`, forced
+  on). Its cache is the static 32 MB buffer in `g_dev`; `__clear_cache` is OS_SynchroniseCodeAreas;
+  `/proc/cpuinfo` is missing, so it divides in software. Same RDRAM hashes as the interpreter on all
+  six test ROMs.
+- Limiter off, Rice through RISC3D, with the Mac otherwise quiet: Mario about 130-160 VI/s, Zelda
+  about 100, GoldenEye about 84 on average (39 in its heaviest intro scene). Full speed is 60.
+- With the limiter on, Mario holds 55-60, with dips to the mid-40s after long frames (stalls of
+  80 ms or more, which the core's limiter doesn't make up).
+- On RISC OS, `SDL_GetTicks` and UnixLib's clocks count centiseconds, and `SDL_Delay` rounds up to
+  the next one, sometimes two. `src/riscos_time.c` gives the limiter a microsecond clock from HAL
+  counter 0 where there is one. RoMac's HAL has no counter, so there it falls back to `SDL_Delay`.
+- Profile (`N64_PROFILE`), Mario 1800 VIs: the RSP (HLE plus Rice's display lists and GL calls)
+  52%, CPU emulation 43%, the SDL event pump 4-6%. Skipping Rice's triangle draws saves only 10%,
+  so the GL path isn't the bottleneck.
+- Timings on the Mac vary widely while other emulators run (other projects' RoMacs, rpcemu, a VM).
+  Compare only runs made close together.
+
+Next: sound (audio-sdl), then the joypad (input-sdl), then the `!Mupen64Plus` app (Choices for
+saves and settings).

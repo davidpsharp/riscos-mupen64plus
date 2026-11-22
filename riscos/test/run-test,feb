@@ -1,11 +1,13 @@
 | riscos-n64 test run: Obey run-test <rom> <tag> <emumode 0|1|2> <VIs> [<gfx plugin>]
 | Arguments after the 5th go to mupen64plus. ROM from roms/, results in out/: <tag>-log (hashes), <tag>-png (framebuffer at VI 120),
 | <tag>-stdout, <tag>-stderr. Dummy video, audio and input unless a gfx plugin is given.
-| VIs 0 runs until the window is closed. Saves and caches go in user/ (XDG dirs, relative).
+| VIs 0 runs until the window is closed. Speed limiter off unless N64_LIMIT is set. Saves and caches go in user/ (XDG dirs, relative).
 Dir <Obey$Dir>
-Set N64_NOLIMIT 1
+If "<N64_LIMIT>"="" Then Set N64_NOLIMIT 1 Else Set N64_NOLIMIT 0
 Set N64_QUITVI %3
 Set N64_HASHLOG out/%1-log
+Set N64_VITIMES out/%1-vit
+Set N64_PROFILE out/%1-prof
 Set N64_SHOT 120:out/%1-120.png
 Set SDL_AUDIODRIVER dummy
 Set XDG_DATA_HOME user

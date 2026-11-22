@@ -4,7 +4,7 @@
 # Mac (host tests):  cmake -S . -B build/mac -G Ninja && ninja -C build/mac
 # RISC OS:           riscos/sdk.sh riscos/build.sh
 cmake_minimum_required(VERSION 3.16)
-project(mupen64plus-riscos C CXX)
+project(mupen64plus-riscos C CXX ASM)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_EXTENSIONS ON)
@@ -12,11 +12,12 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(M64P ${CMAKE_SOURCE_DIR}/mupen64plus)
 set(GEN ${CMAKE_SOURCE_DIR}/src/gen)
-option(N64_DYNAREC "new_dynarec (ARMv7 on RISC OS)" OFF)
+option(N64_DYNAREC "new_dynarec (ARMv7, RISC OS builds only)" OFF)
 option(N64_RICE "link the Rice video plugin (needs OpenGL)" ON)
 
 if(RISCOS OR CMAKE_SYSTEM_NAME STREQUAL "RISCOS" OR CMAKE_C_COMPILER MATCHES "riscos")
   set(N64_RISCOS ON)
+  set(N64_DYNAREC ON CACHE BOOL "" FORCE)   # ARM dynarec: about 4x the cached interpreter on RoMac
 else()
   set(N64_RISCOS OFF)
 endif()
@@ -53,8 +54,8 @@ endif()
 
 set(COMMON_DEFS NDEBUG M64P_STATIC_PLUGINS)
 if(N64_RISCOS)
-  add_compile_options("SHELL:-include ${CMAKE_SOURCE_DIR}/src/riscos_compat.h")
-  set(RISCOS_SRC ${CMAKE_SOURCE_DIR}/src/riscos_compat.c)
+  add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/src/riscos_compat.h>")
+  set(RISCOS_SRC ${CMAKE_SOURCE_DIR}/src/riscos_compat.c ${CMAKE_SOURCE_DIR}/src/riscos_time.c)
 endif()
 if(APPLE)
   add_compile_options(-Wno-deprecated-declarations -DGL_SILENCE_DEPRECATION)
@@ -100,11 +101,34 @@ list(APPEND CORE_SRC
   ${M64P}/core/subprojects/minizip/zip.c
   ${M64P}/core/subprojects/minizip/unzip.c)
 list(APPEND CORE_SRC ${CMAKE_SOURCE_DIR}/src/n64_check.c)   # test hooks (VI)
+set(CORE_DEFS NO_ASM)
+if(N64_DYNAREC)
+  # Ari64's new_dynarec, ARMv7 backend (RISC OS only). Its assembly needs struct offsets, which
+  # are read from a compiled asm_defines.o (as the Makefile does, tools/gen_asm_script.sh)
+  set(ND ${C}/device/r4300/new_dynarec)
+  set(ASMDEF ${CMAKE_BINARY_DIR}/asm_defines)
+  add_library(m64p_asmdefs OBJECT ${C}/asm_defines/asm_defines.c)
+  target_include_directories(m64p_asmdefs PRIVATE ${C} ${C}/api)
+  target_compile_definitions(m64p_asmdefs PRIVATE ${COMMON_DEFS} M64P_CORE_PROTOTYPES DYNAREC
+    NEW_DYNAREC=3)
+  target_compile_options(m64p_asmdefs PRIVATE -fno-lto)
+  add_custom_command(OUTPUT ${ASMDEF}/asm_defines_gas.h
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${ASMDEF}
+    COMMAND bash ${M64P}/core/tools/gen_asm_script.sh ${ASMDEF} $<TARGET_OBJECTS:m64p_asmdefs>
+    DEPENDS m64p_asmdefs $<TARGET_OBJECTS:m64p_asmdefs> COMMAND_EXPAND_LISTS)
+  set_source_files_properties(${ND}/arm/linkage_arm.S PROPERTIES
+    OBJECT_DEPENDS ${ASMDEF}/asm_defines_gas.h)
+  list(APPEND CORE_SRC ${ND}/new_dynarec.c ${ND}/arm/linkage_arm.S ${ND}/arm/arm_cpu_features.c)
+  set(CORE_DEFS DYNAREC NEW_DYNAREC=3)
+endif()
 add_library(m64p_core STATIC ${CORE_SRC})
 target_include_directories(m64p_core PUBLIC ${C} ${C}/api
   PRIVATE ${M64P}/core/subprojects/md5 ${M64P}/core/subprojects/xxhash ${M64P}/core/subprojects)
+if(N64_DYNAREC)
+  target_include_directories(m64p_core PRIVATE ${ASMDEF})
+endif()
 target_compile_definitions(m64p_core PRIVATE ${COMMON_DEFS} M64P_CORE_PROTOTYPES NOCRYPT NOUNCRYPT
-  IOAPI_NO_64 NO_ASM)
+  IOAPI_NO_64 ${CORE_DEFS})
 target_link_libraries(m64p_core PUBLIC ${SDL_TARGET} PNG::PNG ZLIB::ZLIB)
 
 # ---- plugins: each compiled with its prefix header (tools/gen_static.py)
@@ -165,4 +189,11 @@ if(N64_RISCOS)
   riscos_checks(mupen64plus)
   riscos_aif(mupen64plus ${CMAKE_BINARY_DIR}/mupen64plus,ff8)
   set_target_properties(mupen64plus-aif PROPERTIES EXCLUDE_FROM_ALL FALSE)
+endif()
+
+# ---- probes (RISC OS): small programs that measure the platform
+if(N64_RISCOS)
+  add_executable(delayprobe riscos/probe/delay.c)
+  target_link_libraries(delayprobe PRIVATE ${SDL_TARGET})
+  riscos_aif(delayprobe ${CMAKE_BINARY_DIR}/delayprobe,ff8)
 endif()

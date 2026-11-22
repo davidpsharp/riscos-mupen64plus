@@ -378,12 +378,22 @@ void main_message(m64p_msg_level level, unsigned int corner, const char *format,
     DebugMessage(level, "%s", buffer);
 }
 
+#ifdef M64P_STATIC_PLUGINS
+void n64_check_pump_begin(void);   /* riscos-n64 test hooks (src/n64_check.c): time the pump */
+void n64_check_pump_end(void);
+#endif
 static void main_check_inputs(void)
 {
 #ifdef WITH_LIRC
     lircCheckInput();
 #endif
+#ifdef M64P_STATIC_PLUGINS
+    n64_check_pump_begin();
+#endif
     SDL_PumpEvents();
+#ifdef M64P_STATIC_PLUGINS
+    n64_check_pump_end();
+#endif
 }
 
 /*********************************************************************************************************
@@ -961,6 +971,17 @@ void new_frame(void)
     }
 }
 
+#ifdef __riscos__
+/* riscos-n64: SDL's clock and delay are centisecond-coarse on RISC OS (src/riscos_time.c) */
+unsigned int riscos_ticks_ms(void);
+void riscos_delay_ms(unsigned int ms);
+#define LIMITER_TICKS() riscos_ticks_ms()
+#define LIMITER_DELAY(ms) riscos_delay_ms(ms)
+#else
+#define LIMITER_TICKS() SDL_GetTicks()
+#define LIMITER_DELAY(ms) SDL_Delay(ms)
+#endif
+
 static void apply_speed_limiter(void)
 {
     static unsigned long totalVIs = 0;
@@ -968,7 +989,7 @@ static void apply_speed_limiter(void)
     static int lastSpeedFactor = 100;
     static unsigned int StartFPSTime = 0;
     static const double defaultSpeedFactor = 100.0;
-    unsigned int CurrentFPSTime = SDL_GetTicks();
+    unsigned int CurrentFPSTime = LIMITER_TICKS();
 
     // calculate frame duration based upon ROM setting (50/60hz) and mupen64plus speed adjustment
     const double VILimitMilliseconds = 1000.0 / g_dev.vi.expected_refresh_rate;
@@ -1016,9 +1037,9 @@ static void apply_speed_limiter(void)
     if(l_MainSpeedLimit && sleepTime > 0 && sleepTime < maxSleepNeeded*SpeedFactorMultiple)
     {
         while(sleepTime >= 0) {
-            SDL_Delay((unsigned int) sleepTime);
+            LIMITER_DELAY((unsigned int) sleepTime);
 
-            CurrentFPSTime = SDL_GetTicks();
+            CurrentFPSTime = LIMITER_TICKS();
             elapsedRealTime = CurrentFPSTime - StartFPSTime;
             sleepTime = totalElapsedGameTime - elapsedRealTime;
         }

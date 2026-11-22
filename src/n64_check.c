@@ -8,6 +8,11 @@
  *   N64_SHOT=vi:file.png[,vi:file.png...]   the VI framebuffer as a PNG at those VIs
  *   N64_QUITVI=n       stop the emulator after n VIs
  *   N64_NOLIMIT=1      run as fast as possible (the speed limiter off)
+ *   N64_VITIMES=file   every VI, a line "N us": microseconds since the previous VI (a fine clock)
+ *   N64_PROFILE=file   at quit, where the time went: the RSP (with HLE, the video plugin's display
+ *                      lists too), the video plugin's screen updates (swaps), the SDL event pump,
+ *                      and the rest (CPU emulation). Sums of clock differences, so a coarse clock
+ *                      (centiseconds) still gives unbiased totals over many calls.
  *
  * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus. */
 #include <stdint.h>
@@ -19,6 +24,7 @@
 
 #include "device/device.h"
 #include "main/main.h"
+#include "plugin/plugin.h"
 
 extern struct device g_dev;
 
@@ -29,6 +35,75 @@ static unsigned hash_every = 60;
 static unsigned quit_vi;
 static double t0;
 static char shots[1024];
+
+#ifdef __riscos__
+unsigned long long riscos_now_us(void);
+static unsigned long long now_us(void) { return riscos_now_us(); }
+#else
+static unsigned long long now_us(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000ull + tv.tv_usec;
+}
+#endif
+static FILE *vitimes;
+static FILE *profile;
+enum { P_RSP, P_SCREEN, P_PUMP, P_N };
+static const char *const pnames[P_N] = { "rsp (incl. HLE display lists)", "gfx updateScreen", "SDL event pump" };
+static unsigned long long ptime[P_N], pcalls[P_N], pump_t0, prof_t0;
+static ptr_DoRspCycles real_rsp;
+static ptr_UpdateScreen real_screen;
+
+static unsigned int CALL timed_rsp(unsigned int cycles)
+{
+    unsigned long long t = now_us();
+    unsigned int r = real_rsp(cycles);
+    ptime[P_RSP] += now_us() - t;
+    pcalls[P_RSP]++;
+    return r;
+}
+
+static void CALL timed_screen(void)
+{
+    unsigned long long t = now_us();
+    real_screen();
+    ptime[P_SCREEN] += now_us() - t;
+    pcalls[P_SCREEN]++;
+}
+
+void n64_check_pump_begin(void)
+{
+    if (profile != NULL)
+        pump_t0 = now_us();
+}
+
+void n64_check_pump_end(void)
+{
+    if (profile != NULL)
+    {
+        ptime[P_PUMP] += now_us() - pump_t0;
+        pcalls[P_PUMP]++;
+    }
+}
+
+static void write_profile(void)
+{
+    unsigned long long total = now_us() - prof_t0, rest = total;
+    int i;
+    for (i = 0; i < P_N; i++)
+    {
+        fprintf(profile, "%-32s %8.0f ms %5.1f%%  %llu calls\n", pnames[i], ptime[i] / 1000.0,
+                total ? 100.0 * ptime[i] / total : 0, pcalls[i]);
+        rest -= ptime[i];
+    }
+    fprintf(profile, "%-32s %8.0f ms %5.1f%%\n", "the rest (CPU emulation)", rest / 1000.0,
+            total ? 100.0 * rest / total : 0);
+    fprintf(profile, "%-32s %8.0f ms over %u VIs\n", "total", total / 1000.0, vi_count);
+    fclose(profile);
+    profile = NULL;
+}
+static unsigned long long last_us;
 
 static double now_ms(void)
 {
@@ -162,6 +237,16 @@ static void init(void)
         quit_vi = atoi(s);
     if ((s = getenv("N64_SHOT")) != NULL)
         strncpy(shots, s, sizeof shots - 1);
+    if ((s = getenv("N64_PROFILE")) != NULL && *s && (profile = fopen(s, "w")) != NULL)
+    {
+        real_rsp = rsp.doRspCycles;
+        rsp.doRspCycles = timed_rsp;
+        real_screen = gfx.updateScreen;
+        gfx.updateScreen = timed_screen;
+        prof_t0 = now_us();
+    }
+    if ((s = getenv("N64_VITIMES")) != NULL && *s)
+        vitimes = fopen(s, "w");
     if ((s = getenv("N64_NOLIMIT")) != NULL && *s == '1')
         main_speedlimiter_toggle();
 }
@@ -172,6 +257,14 @@ void n64_check_vi(void)
     if (!inited)
         init();
     vi_count++;
+    if (vitimes != NULL)
+    {
+        unsigned long long t = now_us();
+        fprintf(vitimes, "%u %llu\n", vi_count, last_us ? t - last_us : 0);
+        last_us = t;
+        if (vi_count % 60 == 0)
+            fflush(vitimes);
+    }
     if (hashlog != NULL && vi_count % hash_every == 0)
     {
         fprintf(hashlog, "vi %u rdram %08x fb %08x ms %.0f\n", vi_count,
@@ -200,6 +293,8 @@ void n64_check_vi(void)
     {
         if (hashlog != NULL)
             fprintf(hashlog, "quit at vi %u after %.0f ms\n", vi_count, now_ms() - t0);
+        if (profile != NULL)
+            write_profile();
         fprintf(stderr, "n64_check: quitting at VI %u after %.0f ms (%.1f VI/s)\n", vi_count,
                 now_ms() - t0, vi_count * 1000.0 / (now_ms() - t0));
         main_stop();
