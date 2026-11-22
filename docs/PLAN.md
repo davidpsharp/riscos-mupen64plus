@@ -191,5 +191,17 @@ to the RoMac/rol-run agent with SendMessage. That agent decides how and when.
   Linux GPU) - 2.1 RISC3D (2.1 Metal)`. Still to see: a picture drawn by Rice, which needs a ROM with
   ordinary display lists (the test ROMs draw with the CPU, which Rice doesn't show).
 
-Next: a display-list ROM for Rice; `osal` paths for RISC OS (`$HOME` errors, Choices); audio and
-input; then the `!Mupen64Plus` app and the dynarec.
+**22 Nov 2026 (later): games draw on RoMac through RISC3D.** Super Mario 64, Zelda: Ocarina of
+Time and GoldenEye 007 (David's own dumps, kept in `work/`, never in git) run in a desktop window with
+Rice on the M3 Pro's GPU, through their intros (screenshots in `work/*-r3d*.png`, `zelda-*.png`,
+`ge-*.png`).
+- Fix needed: riscos-mesa's EGL gives a single-buffered context (`GL_DOUBLEBUFFER` 0), so Rice drew
+  to the front buffer while RISC3D shows the back buffer at each swap: a black window, though
+  `glReadBuffer(GL_FRONT)` readback had the picture and software Mesa showed it. Rice now calls
+  `glDrawBuffer(GL_BACK)` on RISC OS (falling back to GL_FRONT if refused).
+- Saves and caches: test runs set `XDG_DATA_HOME`/`XDG_CACHE_HOME` to `user` (no more `$HOME` error).
+- Speed (cached interpreter, average from boot): Mario 600 VIs in 88 s (about 7 VI/s, slower in 3D
+  scenes); Zelda 1080 in 118 s (9); GoldenEye 1500 in 89 s (17). Full speed is 60: the dynarec next.
+
+Next: the dynarec (ARMv7 new_dynarec) and finding where time goes; audio and input; the
+`!Mupen64Plus` app (Choices for saves and settings).

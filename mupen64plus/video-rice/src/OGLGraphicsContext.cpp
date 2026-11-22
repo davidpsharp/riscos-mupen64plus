@@ -148,6 +148,15 @@ bool COGLGraphicsContext::Initialize(uint32 dwWidth, uint32 dwHeight, BOOL bWind
 
     DebugMessage(M64MSG_INFO, "Using OpenGL: %.60s - %.128s : %.60s", renderStr, versionStr, vendorStr);
 
+#ifdef __riscos__
+    /* riscos-n64: riscos-mesa's EGL gives a single-buffered context, so drawing goes to the
+     * front buffer, but RISC3D (RoMac, ROL) shows the back buffer at each swap: draw to the
+     * back buffer. Software Mesa refuses GL_BACK and keeps drawing to the front, which it shows. */
+    glDrawBuffer(GL_BACK);
+    if (glGetError() != GL_NO_ERROR)
+        glDrawBuffer(GL_FRONT);
+#endif
+
     InitLimits();
     InitState();
     InitOGLExtension();
