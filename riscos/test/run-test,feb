@@ -8,4 +8,4 @@ Set N64_HASHLOG out/%1-log
 Set N64_SHOT 120:out/%1-120.png
 Set SDL_AUDIODRIVER dummy
 WimpSlot -min 200000K -max 200000K
-Run @.mupen64plus --noosd --configdir cfg --datadir data --gfx %4 --audio dummy --input dummy --rsp mupen64plus-rsp-hle --emumode %2 roms/%0
+Run @.mupen64plus --noosd --configdir cfg --datadir data --gfx %4 --audio dummy --input dummy --rsp mupen64plus-rsp-hle --emumode %2 roms/%0 > out/%1.stdout 2> out/%1.stderr

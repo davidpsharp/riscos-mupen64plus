@@ -175,3 +175,21 @@ to the RoMac/rol-run agent with SendMessage. That agent decides how and when.
 4. **Rorth on a throwaway RoMac disc**: yes.
 5. **RoMac changes are requests** handed to the RoMac/rol-run agent (3.6); this project never
    edits `~/code/rol-run`.
+
+## 9. Progress
+
+**22 Nov 2026: phases 0-2 done for RoMac; phase 3 started.**
+- One static program (core, ui-console, rsp-hle, audio-sdl, input-sdl, Rice) builds for the Mac and
+  for RISC OS (riscos-crossdev 1.11, riscos-mesa devkit 20.3.5-22, libMesaGPU linked; crossdev's
+  checks pass: static, stack probes, VFPv3, UnixLib).
+- On a throwaway RoMac (0.1.220 risc3d build, RISC3D 0.05, Linux3D on the GPU), six PeterLemon test
+  ROMs (CP1 ADD/CVT/ROUND/SQRT, COP0 registers, Mandelbrot) give **the same RDRAM and framebuffer
+  hashes as the Mac** at VI 300, cached interpreter; the CP1 tests show PASS.
+- Speed on RoMac (M3 Pro), cached interpreter, these simple ROMs: about 30 VI/s with dummy video,
+  26.5 with Rice's window open (full speed is 60).
+- Rice opens a 640x480 desktop window through SDL and EGL: `Using OpenGL: Apple M3 Pro (RISC3D,
+  Linux GPU) - 2.1 RISC3D (2.1 Metal)`. Still to see: a picture drawn by Rice, which needs a ROM with
+  ordinary display lists (the test ROMs draw with the CPU, which Rice doesn't show).
+
+Next: a display-list ROM for Rice; `osal` paths for RISC OS (`$HOME` errors, Choices); audio and
+input; then the `!Mupen64Plus` app and the dynarec.
