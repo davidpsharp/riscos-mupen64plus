@@ -8,10 +8,10 @@
 #   tools/romac-target.sh stop
 #   tools/romac-target.sh status
 #
-# ROMAC_APP: the RoMac.app to run (default rol-run's build-risc3d, which has the 3D player).
+# ROMAC_APP: the RoMac.app to run (default rol-run's build-mac, 0.1.229 or later: RISC3D is in the main line).
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
-app=${ROMAC_APP:-$HOME/code/rol-run/build-risc3d/RoMac.app}
+app=${ROMAC_APP:-$HOME/code/rol-run/build-mac/RoMac.app}
 res=$app/Contents/Resources
 data=$repo/work/romac
 pidf=$repo/work/romac.pid

@@ -244,6 +244,17 @@ RoMac disc has them in `!System.350.Modules`, and the throwaway disc now gets co
 - Once, a run straight after the GPU crash died at start with "EMT trap, recursion in the abort
   handler of ARMEABISupport"; the next run was fine.
 
-Next: the joypad (input-sdl: keyboard configured, but a Return tap didn't reach the game yet),
-then the `!Mupen64Plus` app (Choices for saves and settings, sound
+**22 Nov 2026 (input):** keyboard control works on RoMac through input-sdl's default mapping
+(Return = Start, Shift = A, Ctrl = B, Z, arrows = stick; `data/InputAutoCfg.ini` is needed).
+Driven by `ro-run key`, Mario 64 goes through file select into the game and runs and jumps. SDL's
+RISC OS driver scans the keyboard (OS_Byte 121), so keys must really be held (Rorth's taps last
+10 cs), and the window needs the input focus.
+- Joypad (David's Xbox One controller): RoMac request 3. rol-run has proposed to David: macOS
+  GameController -> a Linux joydev device -> a small Joystick module in !RoMac giving Joystick_Read
+  (classic and 16-bit forms). Waiting on David; don't build against it until rol-run sends the
+  layout. Then riscos-n64 reads it and offers an SDL virtual joystick to input-sdl.
+- RoMac: use `~/code/rol-run/build-mac/RoMac.app` (0.1.229+, RISC3D merged; 0.1.230+ restarts
+  headless runs on a reset, so `ro-run reboot` works).
+
+Next: the `!Mupen64Plus` app (Choices for saves and settings, sound
 buffer defaults).
