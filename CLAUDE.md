@@ -20,6 +20,7 @@ Build and test:
 - Test hooks (`src/n64_check.c`, env/system variables): `N64_HASHLOG`, `N64_SHOT`, `N64_QUITVI`,
   `N64_NOLIMIT`. Compare `vi N rdram H fb H` lines between platforms.
 - Test ROMs: PeterLemon/N64 (Unlicense) in `work/roms` (not in git).
+- `ro-run` is `~/code/RORTH/tools/ro-run` (the `/usr/local/bin` one is broken).
 - RoMac: `tools/romac-target.sh setup|start|stop` (ro-run target `romac-n64`, no window); then
   `riscos/test/stage.sh`, `ro-run -t romac-n64 sync work/stage/n64 n64`, and
   `ro-run -t romac-n64 cmd 'Obey n64.run-test CP1ADD.N64 tag 1 300 dummy'` (ROM names in Unix form).

@@ -1,11 +1,14 @@
 | riscos-n64 test run: Obey run-test <rom> <tag> <emumode 0|1|2> <VIs> [<gfx plugin>]
 | ROM from roms/, results in out/: <tag>-log (hashes), <tag>-png (framebuffer at VI 120),
 | <tag>-stdout, <tag>-stderr. Dummy video, audio and input unless a gfx plugin is given.
+| VIs 0 runs until the window is closed. Saves and caches go in user/ (XDG dirs, relative).
 Dir <Obey$Dir>
 Set N64_NOLIMIT 1
 Set N64_QUITVI %3
 Set N64_HASHLOG out/%1-log
 Set N64_SHOT 120:out/%1-120.png
 Set SDL_AUDIODRIVER dummy
+Set XDG_DATA_HOME user
+Set XDG_CACHE_HOME user
 WimpSlot -min 200000K -max 200000K
 Run @.mupen64plus --noosd --configdir cfg --datadir data --gfx %4 --audio dummy --input dummy --rsp mupen64plus-rsp-hle --emumode %2 roms/%0 > out/%1.stdout 2> out/%1.stderr
