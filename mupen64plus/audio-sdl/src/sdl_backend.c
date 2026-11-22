@@ -89,9 +89,19 @@ struct sdl_backend
         SDL_AUDIO_ISBIGENDIAN(x) ? "BE" : "LE"
 
 
+/* riscos-n64: how fast the device really takes samples (reported at release, verbose) */
+static unsigned long long cb_bytes;
+static unsigned int cb_calls, cb_first, cb_last;
+
 static void my_audio_callback(void* userdata, unsigned char* stream, int len)
 {
     struct sdl_backend* sdl_backend = (struct sdl_backend*)userdata;
+
+    if (cb_calls++ == 0)
+        cb_first = SDL_GetTicks();
+    else
+        cb_bytes += len;
+    cb_last = SDL_GetTicks();
 
     /* mark the time, for synchronization on the input side */
     sdl_backend->last_cb_time = SDL_GetTicks();
@@ -313,6 +323,10 @@ void release_sdl_backend(struct sdl_backend* sdl_backend)
     if (sdl_backend->error == 0) {
         release_audio_device(sdl_backend);
     }
+    if (cb_last > cb_first)
+        DebugMessage(M64MSG_VERBOSE, "Device took %llu bytes in %u callbacks over %u ms: %.0f sample frames/s; %u underruns",
+                     cb_bytes, cb_calls, cb_last - cb_first, cb_bytes / 4.0 * 1000.0 / (cb_last - cb_first),
+                     (unsigned) sdl_backend->underrun_count);
 
     /* release primary buffer */
     release_cbuff(&sdl_backend->primary_buffer);

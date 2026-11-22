@@ -46,6 +46,12 @@ setup)
 	pd="$data/hd4/!Boot/Choices/Boot/PreDesk"
 	mkdir -p "$pd"
 	printf 'Run IXFS:$.riscos.HardDisc4.!Rorth.!Run\n' > "$pd/!!!Rorth,feb"
+	# SharedSoundBuffer and StreamManager (John Duffell's freeware), which SDL's RISC OS audio
+	# driver needs: from David's disc, as he has them
+	for m in SSBuffer StreamMan; do
+		ditto "$HOME/Library/RoMac/hd4/!Boot/Resources/!System/350/Modules/$m" \
+			"$data/hd4/!Boot/Resources/!System/350/Modules/$m"
+	done
 	mkdir -p "$data/hd4/Work"
 	# the ro-run target (replacing an earlier one of the same name)
 	t=$HOME/.config/ro-run/targets.toml

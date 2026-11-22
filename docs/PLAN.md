@@ -221,5 +221,15 @@ Rice on the M3 Pro's GPU, through their intros (screenshots in `work/*-r3d*.png`
 - Timings on the Mac vary widely while other emulators run (other projects' RoMacs, rpcemu, a VM).
   Compare only runs made close together.
 
-Next: sound (audio-sdl), then the joypad (input-sdl), then the `!Mupen64Plus` app (Choices for
-saves and settings).
+**22 Nov 2026 (sound):** audio-sdl plays through SDL's RISC OS driver (SharedSoundBuffer and
+StreamManager, John Duffell's freeware, which the program needs loaded: `RMEnsure` them; David's
+RoMac disc has them in `!System.350.Modules`, and the throwaway disc now gets copies).
+- The device takes 43,800-43,900 sample frames/s at 44.1 kHz; audio-sdl's sync then paces the game.
+  Sound costs about 8% of the speed. Underruns ("crackles") come when the game falls below full
+  speed: on RoMac, long frames of 80-130 ms argue for a larger PRIMARY_BUFFER_TARGET in the app.
+- Trap: `SDL_AUDIODRIVER` is a system variable, so a `dummy` set once (the old test script) stays
+  set for every later program, and the dummy driver's sleep-based pacing looked like a slow device
+  (27,900/s). Not yet heard by a person: David to listen.
+
+Next: the joypad (input-sdl), then the `!Mupen64Plus` app (Choices for saves and settings, sound
+buffer defaults).
