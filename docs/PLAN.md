@@ -244,6 +244,15 @@ RoMac disc has them in `!System.350.Modules`, and the throwaway disc now gets co
 - Once, a run straight after the GPU crash died at start with "EMT trap, recursion in the abort
   handler of ARMEABISupport"; the next run was fine.
 
+**22 Nov 2026 (pi4-plato on the GPU, the riscos-doom3 fix):** the 64 KB+ BO failures are
+RISC OS 5.30's 128 MB cap on a dynamic area: V3DRender's 256 MB buffer area is made at boot
+under it (riscos-doom3 `docs/risc3d-issues.md` item 2; KB lesson
+2026-11-22-da-cap-and-specific-page-claims). With DAClamp run, then RISC3D and the stock
+V3DRender 0.16 reloaded, Rice draws Mario on the GPU ("V3D 4.2.14.0 - 2.1 Mesa 26.1.6"):
+154 VI/s unthrottled (software Mesa: 12-15), 0 BO errors, 0 resets, 0 MMU errors. Lasts until
+the Pi restarts. The real fix is Andy's (V3DRender making its area at a size the OS allows, or
+!RISC3D lifting the cap before loading it); riscos-doom3 has reported it.
+
 **22 Nov 2026 (input):** keyboard control works on RoMac through input-sdl's default mapping
 (Return = Start, Shift = A, Ctrl = B, Z, arrows = stick; `data/InputAutoCfg.ini` is needed).
 Driven by `ro-run key`, Mario 64 goes through file select into the game and runs and jumps. SDL's
@@ -303,4 +312,6 @@ Not now (David's call when to pick them up):
   didn't reach IXFS. Until then games start by dragging them to the icon.
 - Full screen at a size with no matching mode (960x720): centre the picture.
 - Alt+Enter also presses Start (Return is Start), as upstream.
-- pi5-octagon kernel question; the Pi 4 GPU (V3DRender bug); GLideN64.
+- pi5-octagon kernel question; GLideN64.
+- Pi 4 GPU: until !RISC3D/V3DRender is fixed, the GPU needs DAClamp then V3DRender reloaded
+  (see section 9); decide whether the app offers that.
