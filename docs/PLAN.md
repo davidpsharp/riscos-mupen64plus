@@ -1,0 +1,177 @@
+# riscos-n64: plan for porting mupen64plus to RISC OS on RISC3D
+
+Written 22 Nov 2026 (decisions in section 8) from: the riscos-kb, RoMac's `docs/risc3d.md`, Andy Youll's RISC3D
+(`rol-run/build-r3dkit`, release 0.10/0.11), the riscos-quake3 / riscos-pcem / riscos-mgba ports,
+and the mupen64plus sources (core `daae68e`, 10 Nov 2026; GLideN64 master).
+
+## 1. Goal and targets
+
+One build of mupen64plus (one ARMv7 hard-float `!RunImage`) that draws through riscos-mesa's
+EGL and RISC3D, and runs on:
+
+| # | Platform | GPU route | CPU | Status of the route |
+|---|---|---|---|---|
+| 1 | **RoMac** (RISC OS on Linux's image on macOS, Tarmac) | RISC3D -> Linux3D -> `romac-3d` -> Mac OpenGL | ARM32 translated by Tarmac to AArch64 | works: TORCS 125 fps, ClassiCube 62 fps. Contexts: GL 2.1 compat, GL 3.x via 4.1 core; **no GLES 3** |
+| 2 | **RISC OS on Linux** on **pi5-octagon** (Pi 5, Debian 13) | RISC3D -> Linux3D -> `rol-3d` -> Linux Mesa | native AArch32 | works on Pi 4 and the Dev Kit; **Pi 5 (V3D 7.1) not yet tested by Andy**: Linux's Mesa drives it, so it should work. We would be the first to try it |
+| 3 | **Native RISC OS 5.30, Pi 4** | RISC3D -> V3DRender (program must link `libMesaGPU`) | Cortex-A72, one core | works: OpenLara 50 fps, ClassiCube 31 fps |
+
+The same binary serves all three: RISC3D picks the driver, the program never names one.
+Native Pi 4 only uses the GPU if the program is linked with `-Wl,-u,riscos_mesa_gpu -lMesaGPU`
+(static build, ~15 MB more), so we always link it.
+
+## 2. What mupen64plus is, and what each part needs
+
+mupen64plus is a core library plus plugins loaded with `dlopen`, driven by a front end.
+
+| Part | Choice | What it needs on RISC OS |
+|---|---|---|
+| Front end | `mupen64plus-ui-console` | loads core + plugins by `dlopen` -> replaced by a static table (see 3.1); later a desktop wrapper |
+| Core | `mupen64plus-core` | SDL2 for its video extension (GL context, window) ; zlib, libpng; optional minizip; CPU modes: pure interpreter, **cached interpreter** (portable C), **new_dynarec** (has an ARMv7 back end, `new_dynarec/arm/`) |
+| RSP | `mupen64plus-rsp-hle` | plain C; nothing special |
+| Audio | `mupen64plus-audio-sdl` | SDL2 audio (SharedSound under SDL's RISC OS driver) |
+| Input | `mupen64plus-input-sdl` | SDL2 keyboard/joystick |
+| Video, phase 1 | **`mupen64plus-video-rice`** | OpenGL 1.x/2.x fixed function, or GLES 2 (`USE_GLES=1`). Fits every RISC3D route, including RoMac's GL 2.1 |
+| Video, phase 2 | **GLideN64** (C++17) | desktop build asks for **GL 3.3 core**; GLES builds ask for ES 2/3/3.1. RISC3D tops out at **GL 3.1 / ES 3.1**, and RoMac has no ES 3. So: GLES 3.x build on Pi 4 and ROL; RoMac needs ES 3 contexts added to `romac-3d` first (see 3.6) |
+| Video, not planned | angrylion (software LLE, far too slow), parallel-rdp (Vulkan: no route on RISC OS), glide64mk2 (no gain over Rice + GLideN64) | |
+
+Facts checked in the source:
+- new_dynarec's 32 MB translation cache is a static, page-aligned array inside `g_dev`
+  (`r4300_core.h:184`), made executable with `mprotect` and flushed with `__clear_cache`. On
+  RISC OS application memory is already executable and `__clear_cache` maps to
+  `OS_SynchroniseCodeAreas`, so the dynarec's memory model fits RISC OS; `mprotect` becomes a no-op.
+  The only `mmap(MAP_FIXED)` is the 64-bit `ROM_COPY` hack, unused on 32-bit.
+- The Makefile picks ARM + new_dynarec from `uname -m` (`armv7*`); we set `HOST_CPU=armv7l`
+  explicitly, or drive it from our own CMake.
+- ioquake3's ARM JIT already runs on RISC OS (riscos-quake3), and RoMac invalidates Tarmac's
+  translations on the `cacheflush` syscall that `OS_SynchroniseCodeAreas` makes under ROL. So a
+  JIT inside RISC OS inside RoMac is expected to *work*; how fast is an open question (5.4).
+
+## 3. Work streams
+
+### 3.1 One static binary (no dlopen)
+The KB rule is static builds (`-static`, no LTO). Every plugin exports the same names
+(`PluginStartup`, `PluginGetVersion`, `RomOpen`, ...) and some share global helper names, so:
+- build each plugin as a partial link (`ld -r`), keep only its API symbols global
+  (`objcopy --keep-global-symbols`), and prefix them (`--prefix-symbols=rice_` or `--redefine-syms`);
+- add `osal_dynamiclib_static.c` to core and ui-console: `osal_dynlib_open("rice")` returns a
+  handle to a table, `osal_dynlib_getproc` looks the name up in it;
+- ui-console links the core directly (it already can, via its function pointer table).
+Fallback if this gets ugly: GCCSDK shared libraries (`ld-riscos/so/2` in !SharedLibs). Not preferred.
+
+### 3.2 OS layer
+- `osal/files_riscos.c`: config and save folders in `<Choices$Write>.Mupen64Plus`, shared data
+  (`mupen64plus.ini`, fonts) in `<Mupen64Plus$Dir>`, ROMs from anywhere (UnixLib path names).
+- `fenv` and FPU rounding: the core's FPU emulation sets host rounding modes. Check UnixLib's
+  `fesetround` on VFP, and the flush-to-zero lesson (`lessons/2026-11-13-vfp-flush-to-zero...`).
+- Threads: keep emulation on the main thread; ship `PThrTicker` for SDL audio.
+- Memory: 32 MB dynarec cache + 8 MB RDRAM + ROM (up to 64 MB) + textures. Heap in a dynamic
+  area (`__dynamic_da_name`, 128 MB cap per DA); the static dynarec buffer is in the app slot.
+- Alignment: build `-mno-unaligned-access`; run the QEMU armtest (riscos-mgba `docker/armtest`)
+  that traps unaligned access like RISC OS.
+
+### 3.3 Video through RISC3D
+- The core's video extension opens an SDL2 GL window. Under SDL's RISC OS driver that goes to
+  EGL and so to RISC3D (`SDL_RISCOS_GL_EGL` default). To check early: that the driver honours
+  `SDL_GL_CONTEXT_PROFILE_ES` and version attributes, double buffering, swap interval, and window
+  resize/full screen. This is the single biggest unknown; it is spike S1.
+- Link order: `-lEGL ... -lOSMesa -Wl,-u,riscos_mesa_gpu -lMesaGPU`; riscos-mesa >= 20.3.5-22.
+  If the crossdev devkit's Mesa is older, build riscos-mesa from source as riscos-quake3 does.
+- Rice first (GLES 2 build and GL build; pick whichever runs on all three; GL 2.1 is the common
+  ground with RoMac).
+
+### 3.4 Desktop app `!Mupen64Plus`
+Follow `app-conventions.md` section A unless David decides otherwise (questions in 7):
+icon bar icon (Info/Help/Quit, from the patched SDL2 in riscos-pcem), drag a ROM (`.z64 .n64
+.v64`) onto it or the window, game in a desktop window by default with a full-screen toggle,
+settings in Choices, Info box with version and build date, `!Help` with requirements.
+Per-frame Wimp polling comes from SDL's event pump, which the core calls every VI.
+
+### 3.5 Speed
+- CPU mode order: cached interpreter first (portable, debuggable), then new_dynarec ARMv7.
+- Pi 4 native: dynarec is the big win; RISC OS uses one core, which suits mupen64plus (mostly
+  single threaded; leave GLideN64's threaded GL off).
+- Profile with `arcelite-port`'s `OS_CallEvery` sampler (`ro_prof.c` + `prof.py`).
+- Frame skip and VI-rate limiter settings from the start, so slow targets still play sound right.
+
+### 3.6 RoMac work (in `~/code/rol-run`: requests only, never edited from here)
+This project does not change RoMac. Each need is written up in `docs/romac-requests.md` (in ARM,
+Tarmac and Linux terms, with measurements and a test ROM or program that shows it) and handed
+to the RoMac/rol-run agent with SendMessage. That agent decides how and when.
+- Expected request 1, needed only for GLideN64: ES 3.0 contexts in `romac-3d` (GLSL ES 3.00 -> GLSL 4.10 core is
+  mostly a header rewrite; the GL 3 path already runs on 4.1 core). Coordinate with Andy's
+  planned split of platform code out of rol-3d.
+- If the dynarec is slow under Tarmac (5.4), the likely causes are known from OpenTS: code cache
+  thrash and invalidation storms from small `cacheflush` calls. That would be request 2, with
+  Runway's own "tarmac per s" and "slow paths" log lines as evidence.
+
+## 4. Phases and exit criteria
+
+| Phase | Work | Done when |
+|---|---|---|
+| **0. Set-up** (small) | Vendor mupen64plus repos + GLideN64 at pinned commits (`PROVENANCE.md`); copy `sdk.sh`/`build.sh`/`toolchain.cmake` from riscos-quake3/pcem; CMake build of core + plugins | Mac build of the tree from our CMake |
+| **1. Static binary on the Mac** | 3.1 shim; Mac SDL2 build with dummy video/audio; add `M64P_SYNCLOG` (hash of RDRAM + VI count every N frames) | one Mac binary boots a test ROM headless and writes a hash log; interpreter and cached interpreter agree |
+| **2. RISC OS, no graphics** | Cross-build; dummy video; cached interpreter; 3.2 OS layer | test ROMs (CPU tests) pass on `pi4-plato` and RoMac, hash logs match the Mac; VIs/s measured |
+| **S1 spike (can run during 1-2)** | Tiny SDL2 program: open GL 2.1, GLES 2 and GLES 3 contexts through the core's vidext path; draw; swap | know which contexts each of the three targets gives, through SDL's driver |
+| **3. Pictures with Rice** | Rice through RISC3D | a homebrew ROM draws correctly on RoMac, ROL and Pi 4 (screenshots via Rorth/RUNWAY_SHOTDIR) |
+| **4. Playable app** | audio-sdl, input-sdl (keyboard map + pads), `!Mupen64Plus` | a game plays with sound from the icon bar on all three |
+| **5. Speed** | new_dynarec on Pi 4 native, then ROL, then RoMac; profiling; frame skip | dynarec hash logs match the interpreter; fps table per target and per CPU mode |
+| **6. GLideN64** | GLES 3 build on Pi 4/ROL; ES 3 in romac-3d (3.6) | GLideN64 selectable; Rice stays the fallback |
+| **7. Release** | VERSION, package, zip, `!Help`, GPL source offer | David's go-ahead |
+
+## 5. Testing
+
+1. **Mac first** for everything platform-neutral (shim, OS layer, hash logs), with
+   `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy nice -n 19`; never open game windows on David's Mac.
+2. **ARM32 Linux in QEMU** (riscos-mgba armtest) for the ARMv7 dynarec and alignment traps
+   before touching a RISC OS machine.
+3. **Pi 4 native** through Rorth: `pi4-plato` is up (and `pi4-socrates` when it answers).
+4. **RoMac**: Rorth installed on a throwaway RoMac data folder (approved), registered as a
+   Rorth target, with the risc3d player and !RISC3D 0.05+, !MesaLibs 20.3.5-22+, !SharedLibs.
+   `runway-headless` with `RUNWAY_EVENTS`/`RUNWAY_SHOTDIR` for scripted runs.
+5. **RISC OS on Linux: pi5-octagon** (Debian 13, kernel 6.18.50 rpi, Mesa 26.2.6, render node
+   present; reached over ssh). Checked 22 Nov 2026: **16 KB-page kernel, ROL not installed.**
+   ROL native needs a 4 KB-page kernel (`kernel=kernel8.img`; see
+   `riscos-kb/lessons/2026-11-09-riscos-on-linux-native-vs-qemu.md`). The KVM route keeps the
+   16 KB kernel but has no GPU in the VM (llvmpipe only), so it is no good for RISC3D. Plan:
+   install ROL (riscos-support + riscos-risc3d) and switch the Pi to `kernel8.img`, **with
+   David's OK** (question 6); then put Rorth on the ROL disc. For smoke tests before that, ROL in
+   Docker with `RISC3D$Force` exercises Linux3D's command stream on llvmpipe.
+6. **Determinism**: `M64P_SYNCLOG` hashes compared Mac vs Pi vs RoMac, and interpreter vs dynarec,
+   find CPU-emulation bugs without looking at pictures.
+7. **ROMs**: public test ROMs and homebrew (e.g. n64-systemtest, krom's CPU/RDP tests) in CI-style
+   runs; David's own cartridge dumps for game testing, kept out of git.
+
+### Speed expectations (guesses until phase 5 measures them)
+
+| Target | Cached interpreter | new_dynarec |
+|---|---|---|
+| Pi 4 native | perhaps 10-25% of full speed | lighter games near full speed (Pi 4 32-bit Linux builds manage this) |
+| ROL on pi5-octagon | faster than Pi 4 native (A76 at 2.4 GHz) | likely full speed for most games |
+| RoMac (M-series) | depends on Tarmac: possibly 30-60% | unknown: double JIT; may be faster or may thrash Tarmac's cache |
+
+## 6. Risks
+
+| Risk | Effect | Mitigation |
+|---|---|---|
+| SDL's RISC OS driver doesn't pass context version/profile to EGL | no GLES 3, maybe wrong context | spike S1 early; patch SDL (we already carry SDL patches) |
+| GLideN64 wants GL 3.3 core, RISC3D gives at most 3.1 | desktop-GL GLideN64 can't run | GLES 3 build; Rice meanwhile |
+| RoMac has no GLES 3 | no GLideN64 on the Mac | 3.6 in romac-3d |
+| Dynarec under Tarmac slow or wrong | RoMac stuck on interpreter speed | measure; Tarmac requests; cached interpreter default on RoMac if needed |
+| Plugin symbol clashes in one static binary | link errors, wrong functions called | partial link + localise per plugin (3.1) |
+| UnixLib gaps (fenv, `mprotect`, `getpwuid`, XDG paths) | build or subtle FPU errors | OS layer; hash logs vs Mac |
+| Licences | mupen64plus and GLideN64 are GPLv2, RISC3D and riscos-mesa MIT, V3DRender GPL-2.0+ | GPL binary: ship source with releases; no ROMs ever |
+
+## 7. Open questions for David
+
+6. **pi5-octagon**: OK to install RISC OS on Linux (riscos-support, riscos-risc3d) and switch it
+   to the 4 KB-page kernel (`kernel=kernel8.img` in `config.txt`)? It's the only way to give ROL
+   the GPU there. Rorth-on-ROL comes after. (Runway's own Pi 5 tests ran on both kernels.)
+
+## 8. Decisions (David, 22 Nov 2026)
+
+1. **Desktop window by default**, with a full-screen toggle.
+2. **Rice first**, GLideN64 later.
+3. **pi5-octagon** (Pi 5, Linux) is the RISC OS on Linux machine.
+4. **Rorth on a throwaway RoMac disc**: yes.
+5. **RoMac changes are requests** handed to the RoMac/rol-run agent (3.6); this project never
+   edits `~/code/rol-run`.
