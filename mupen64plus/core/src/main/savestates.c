@@ -176,7 +176,10 @@ static void savestates_clear_job(void)
      (type *)(buff-count*sizeof(type)))
 #define COPYARRAY(dst, buff, type, count) \
     memcpy(dst, GETARRAY(buff, type, count), sizeof(type)*count)
-#define GETDATA(buff, type) *GETARRAY(buff, type, 1)
+/* riscos-n64: through memcpy, as the data is packed: a uint64_t read straight from an address that
+   isn't a multiple of 4 is an LDRD alignment fault on ARM, which RISC OS (unlike Linux) doesn't fix up */
+#define GETDATA(buff, type) \
+    ({ type getdata_value_; memcpy(&getdata_value_, GETARRAY(buff, type, 1), sizeof(type)); getdata_value_; })
 #define PUTARRAY(src, buff, type, count) \
     memcpy(buff, src, sizeof(type)*count); \
     to_little_endian_buffer(buff, sizeof(type), count); \

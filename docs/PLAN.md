@@ -268,5 +268,28 @@ RISC OS driver scans the keyboard (OS_Byte 121), so keys must really be held (Ro
 - Tested on RoMac by dragging from a Filer window: Mario and Zelda start, Insert and F5 write a
   PNG and a save state, Escape or the close icon ends the game.
 
-Next: the `!Mupen64Plus` app, more (full-screen toggle, a ROM file type, Choices window?) (Choices for saves and settings, sound
+**22 Nov 2026 (the app, 2):** David asked for a full-screen key that doesn't clash with RoMac, a
+Choices window with the cfg still editable, and save/load on the menu.
+- Full screen: mupen64plus's own Alt+Enter already works (a mode change and back). RoMac's
+  shortcuts are Command keys, so no clash. Alt+Enter also presses Start (Return), as upstream.
+- The emulator puts no icon of its own on the icon bar (`src/riscos_desktop.c`: SDL's
+  `Wimp_CreateIcon` declined through `--wrap=_kernel_swi` when `Mupen64Plus$LauncherIcon` is
+  set), so the launcher's icon stays. Its menu: Info, Help, Choices..., then the game's Save
+  state, Load state, Slot (0-9, ticked), Full screen, Pause (ticked), Stop game, then Quit.
+  Commands go through `Mupen64Plus$Command`, read once a frame; the game publishes
+  `Mupen64Plus$GameState`.
+- Choices window: window size (640/960/1280 wide), start full screen, emulation (recompiler,
+  cached or pure interpreter), sound on/off, Edit file (opens the cfg in the editor), Cancel,
+  Save. It changes only those lines. Saved during a game, they're written after it ends, as
+  the emulator writes the file when it quits.
+- Load state crashed ("EMT trap / stack overflow"): an unaligned LDRD in `savestates.c`'s
+  `GETDATA`, fixed with memcpy (KB lesson 2026-11-22-unaligned-ldrd-reported-as-stack-overflow).
+- All tested on RoMac with Mario: save to slots 0 and 3, load, slot 5 kept, pause, full screen
+  from the menu, Choices during a game, stop.
+- File type: none is allocated for N64 ROMs (only &0D7 Game Boy); IXFS types files by
+  extension through MimeMap, so a MimeMap line would make .z64/.v64/.n64 typed, once a type
+  is allocated by ROOL (David's call).
+- Known: full screen at a size with no matching mode (960x720) shows the picture in a corner.
+
+Next: a ROM file type (if allocated), the joypad (waiting on RoMac request 3). (Choices for saves and settings, sound
 buffer defaults).

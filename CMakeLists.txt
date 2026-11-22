@@ -56,6 +56,7 @@ set(COMMON_DEFS NDEBUG M64P_STATIC_PLUGINS)
 if(N64_RISCOS)
   add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/src/riscos_compat.h>")
   set(RISCOS_SRC ${CMAKE_SOURCE_DIR}/src/riscos_compat.c ${CMAKE_SOURCE_DIR}/src/riscos_time.c)
+  set(RISCOS_CORE_SRC ${CMAKE_SOURCE_DIR}/src/riscos_desktop.c)   # the launcher's commands
 endif()
 if(APPLE)
   add_compile_options(-Wno-deprecated-declarations -DGL_SILENCE_DEPRECATION)
@@ -100,7 +101,7 @@ list(APPEND CORE_SRC
   ${M64P}/core/subprojects/minizip/ioapi.c
   ${M64P}/core/subprojects/minizip/zip.c
   ${M64P}/core/subprojects/minizip/unzip.c)
-list(APPEND CORE_SRC ${CMAKE_SOURCE_DIR}/src/n64_check.c)   # test hooks (VI)
+list(APPEND CORE_SRC ${CMAKE_SOURCE_DIR}/src/n64_check.c ${RISCOS_CORE_SRC})   # test hooks (VI)
 set(CORE_DEFS NO_ASM)
 if(N64_DYNAREC)
   # Ari64's new_dynarec, ARMv7 backend (RISC OS only). Its assembly needs struct offsets, which
@@ -187,6 +188,8 @@ endif()
 if(N64_RISCOS)
   include(RiscOSBuild)
   riscos_checks(mupen64plus)
+  # SDL's own icon bar icon is declined when the launcher's is there (src/riscos_desktop.c)
+  target_link_options(mupen64plus PRIVATE "-Wl,--wrap=_kernel_swi")
   riscos_aif(mupen64plus ${CMAKE_BINARY_DIR}/mupen64plus,ff8)
   set_target_properties(mupen64plus-aif PROPERTIES EXCLUDE_FROM_ALL FALSE)
 endif()

@@ -2,10 +2,12 @@
  * Mupen64Plus for RISC OS: the launcher (!Mupen64Plus.!RunImage).
  *
  * A small desktop task with the icon on the icon bar. Its menu has Info (About this program),
- * Help and Quit. Dropping an N64 ROM on the icon (a .z64, .v64 or .n64 file, or a zip holding
+ * Help, Choices and Quit, and the running game's commands (save and load its state, its slot, full
+ * screen, pause, stop), which it passes on through Mupen64Plus$Command. Dropping an N64 ROM on the icon (a .z64, .v64 or .n64 file, or a zip holding
  * one) starts the emulator in a desktop window: the Obey file Game, which runs Mupen64 with
  * the ROM's name in Unix form. A click on the icon offers the last ROM played again.
- * One game at a time: while it runs, the launcher says so.
+ * One game at a time: while it runs, the launcher says so. The emulator doesn't put an icon of its own
+ * on the icon bar (src/riscos_desktop.c), so this one stays.
  *
  * The Wimp code (icon, menu, Info window, the message window and its buttons, the handler swap
  * around Wimp_Poll) is riscos-doom3's launcher's, itself adapted from David Sharp's OpenTS RISC OS
@@ -147,55 +149,100 @@ void Create_Info_Window(void)
 	}
 }
 
-struct {
+struct MenuItem {
+	unsigned flags;		// 1 ticked, 2 a dotted line after it, 0x80 the last item
+	int submenu;
+	unsigned icon_flags;
+	char const * buffer;	// indirected text
+	char const * validation;
+	int length;
+};
+
+template <int N> struct MenuBlock {
 	char title[12];
 	unsigned char colours[4];
 	int width, height, gap;
-	struct {
-		unsigned flags;
-		int submenu;
-		unsigned icon_flags;
-		char text[12];
-	} items[3];
-} Menu;
+	MenuItem items[N];
+};
 
-enum { MenuInfo, MenuHelp, MenuQuit };
+// The icon bar menu. The game's commands are shaded when no game is running; while one runs, the
+// launcher passes them on (Send_Command). The keys are the game's own for the same thing.
+enum { MenuInfo, MenuHelp, MenuChoices, MenuSave, MenuLoad, MenuSlot, MenuFullScreen, MenuPause, MenuStop, MenuQuit,
+	MenuCount };
+char const * const MenuText[MenuCount] = {
+	"Info", "Help", "Choices...", "Save state       F5", "Load state       F7", "Slot", "Full screen  Alt+Enter",
+	"Pause                   P", "Stop game      Escape", "Quit"};
+MenuBlock<MenuCount> Menu;
+MenuBlock<10> SlotMenu;
+char SlotText[10][4];
+int MenuHeight = 0;
+
+void Set_Item(MenuItem & item, char const * text, int submenu, bool shaded)
+{
+	item.submenu = submenu;
+	item.icon_flags = 0x07000121 | (shaded ? 0x00400000u : 0u);	// text, filled, indirected
+	item.buffer = text;
+	item.validation = (char const *)-1;
+	item.length = (int)strlen(text) + 1;
+}
+
+template <int N> void Menu_Header(MenuBlock<N> & menu, char const * title, int widest)
+{
+	memset(&menu, 0, sizeof(menu));
+	strncpy(menu.title, title, sizeof(menu.title));
+	menu.colours[0] = 7; menu.colours[1] = 2; menu.colours[2] = 7; menu.colours[3] = 0;
+	menu.width = 16 * widest + 32;
+	menu.height = 44;
+}
+
+// The game's slot and whether it's paused, as the emulator last said (Mupen64Plus$GameState).
+void Game_State(int & slot, bool & paused);
 
 void Build_Menu(void)
 {
-	memset(&Menu, 0, sizeof(Menu));
-	strncpy(Menu.title, AppName, sizeof(Menu.title));
-	Menu.colours[0] = 7; Menu.colours[1] = 2; Menu.colours[2] = 7; Menu.colours[3] = 0;
-	Menu.width = 128;
-	Menu.height = 44;
-	char const * names[3] = {"Info", "Help", "Quit"};
-	for (int i = 0; i < 3; i++) {
-		Menu.items[i].submenu = i == MenuInfo ? InfoWindow : -1;
-		Menu.items[i].icon_flags = 0x07000021;
-		strncpy(Menu.items[i].text, names[i], sizeof(Menu.items[i].text));
+	bool const game = GameTask != 0;
+	int slot = 0;
+	bool paused = false;
+	if (game) {
+		Game_State(slot, paused);
 	}
-	Menu.items[MenuQuit].flags = 0x80;	// the last item
+	int widest = 0;
+	for (int i = 0; i < MenuCount; i++) {
+		widest = (int)strlen(MenuText[i]) > widest ? (int)strlen(MenuText[i]) : widest;
+	}
+	Menu_Header(Menu, AppName, widest);
+	for (int i = 0; i < MenuCount; i++) {
+		bool const game_item = i >= MenuSave && i <= MenuStop;
+		Set_Item(Menu.items[i], MenuText[i], i == MenuInfo ? InfoWindow : i == MenuSlot ? (int)&SlotMenu : -1,
+			game_item && !game);
+	}
+	Menu.items[MenuChoices].flags |= 2;
+	Menu.items[MenuStop].flags |= 2;
+	if (paused) {
+		Menu.items[MenuPause].flags |= 1;
+	}
+	Menu.items[MenuQuit].flags |= 0x80;
+	MenuHeight = MenuCount * 44 + 2 * 24;
+
+	Menu_Header(SlotMenu, "Slot", 4);
+	for (int i = 0; i < 10; i++) {
+		snprintf(SlotText[i], sizeof(SlotText[i]), "%d", i);
+		Set_Item(SlotMenu.items[i], SlotText[i], -1, false);
+		if (i == slot) {
+			SlotMenu.items[i].flags |= 1;
+		}
+	}
+	SlotMenu.items[9].flags |= 0x80;
 }
 
 void Open_Menu(int mouse_x)
 {
+	Build_Menu();
 	_kernel_swi_regs regs;
 	regs.r[1] = (int)&Menu;
 	regs.r[2] = mouse_x - 64;
-	regs.r[3] = 96 + 3 * 44;
+	regs.r[3] = 96 + MenuHeight;
 	Swi(Wimp_CreateMenu, regs);
-}
-
-void Remove_Icon(void)
-{
-	if (IconHandle < 0) {
-		return;
-	}
-	int block[2] = {-2, IconHandle};
-	_kernel_swi_regs regs;
-	regs.r[1] = (int)block;
-	Swi(Wimp_DeleteIcon, regs);
-	IconHandle = -1;
 }
 
 void Put_Icon_On_Bar(void)
@@ -527,6 +574,422 @@ Kind Kind_Of(std::string const & name)
 	return NOT_A_ROM;
 }
 
+/* --- commands to the running game -------------------------------------------------------- */
+
+// The emulator reads Mupen64Plus$Command once a frame, clears it and does what it says
+// (src/riscos_desktop.c): save, load, slot N, fullscreen, pause, stop.
+void Set_Variable(char const * name, char const * value)
+{
+	_kernel_swi_regs regs;
+	regs.r[0] = (int)name;
+	regs.r[1] = (int)value;
+	regs.r[2] = value != nullptr ? (int)strlen(value) : -1;	// -1 deletes it
+	regs.r[3] = 0;
+	regs.r[4] = 0;
+	_kernel_swi(OS_SetVarVal, &regs, &regs);
+}
+
+void Send_Command(char const * command)
+{
+	if (GameTask != 0) {
+		fprintf(stderr, "launcher: to the game: %s\n", command);
+		Set_Variable("Mupen64Plus$Command", command);
+	}
+}
+
+void Game_State(int & slot, bool & paused)
+{
+	std::string state = Os_Variable("Mupen64Plus$GameState");
+	slot = 0;
+	paused = false;
+	if (state.size() >= 3) {
+		slot = atoi(state.c_str());
+		paused = state[state.size() - 1] == '1';
+	}
+}
+
+/* --- settings: <Choices$Write>.Mupen64Plus.mupen64plus/cfg ----------------------------------- */
+
+// The emulator's own settings file, mupen64plus's ini format. The Choices window changes a few of
+// its lines and leaves the rest of the file (and anyone's edits to it) as it was. The emulator
+// writes the file back when it quits (it keeps the save slot there), so while a game runs, the
+// changes wait and are written when it ends.
+char const CfgUnix[] = "/<Choices$Write>/Mupen64Plus/mupen64plus.cfg";
+
+struct Setting {
+	std::string section, key, value;
+};
+std::vector<Setting> PendingSettings;
+
+void Ensure_Cfg(void)
+{
+	Oscli("CDir <Choices$Write>.Mupen64Plus");
+	Oscli("CDir <Choices$Write>.Mupen64Plus.Saves");
+	FILE * f = fopen(CfgUnix, "r");
+	if (f != nullptr) {
+		fclose(f);
+		return;
+	}
+	Oscli("Copy <Mupen64Plus$Dir>.Defaults.mupen64plus/cfg <Choices$Write>.Mupen64Plus.mupen64plus/cfg ~C~V");
+}
+
+std::vector<std::string> Read_Lines(void)
+{
+	std::vector<std::string> lines;
+	FILE * f = fopen(CfgUnix, "r");
+	if (f == nullptr) {
+		return lines;
+	}
+	char line[2048];
+	while (fgets(line, sizeof(line), f) != nullptr) {
+		line[strcspn(line, "\r\n")] = '\0';
+		lines.push_back(line);
+	}
+	fclose(f);
+	return lines;
+}
+
+std::string Trim(std::string const & text)
+{
+	size_t a = text.find_first_not_of(" \t");
+	size_t b = text.find_last_not_of(" \t");
+	return a == std::string::npos ? "" : text.substr(a, b - a + 1);
+}
+
+// Where a key's line is in a section ("key = value"), or -1; also where the section ends.
+int Find_Key(std::vector<std::string> const & lines, std::string const & section, std::string const & key, int & end)
+{
+	bool in = false;
+	end = -1;
+	for (size_t i = 0; i < lines.size(); i++) {
+		std::string const t = Trim(lines[i]);
+		if (!t.empty() && t[0] == '[') {
+			if (in) {
+				return -1;
+			}
+			in = t == "[" + section + "]";
+			if (in) {
+				end = (int)i + 1;
+			}
+			continue;
+		}
+		if (!in) {
+			continue;
+		}
+		if (!t.empty() && t[0] != '#') {
+			end = (int)i + 1;
+		}
+		size_t eq = t.find('=');
+		if (eq != std::string::npos && Trim(t.substr(0, eq)) == key) {
+			return (int)i;
+		}
+	}
+	return -1;
+}
+
+std::string Get_Setting(std::vector<std::string> const & lines, char const * section, char const * key)
+{
+	int end;
+	int i = Find_Key(lines, section, key, end);
+	if (i < 0) {
+		return "";
+	}
+	std::string value = Trim(lines[i].substr(lines[i].find('=') + 1));
+	if (value.size() >= 2 && value[0] == '"' && value[value.size() - 1] == '"') {
+		value = value.substr(1, value.size() - 2);
+	}
+	return value;
+}
+
+bool Write_Settings(std::vector<Setting> const & settings)
+{
+	Ensure_Cfg();
+	std::vector<std::string> lines = Read_Lines();
+	if (lines.empty()) {
+		return false;
+	}
+	for (Setting const & setting : settings) {
+		std::string const line = setting.key + " = " + setting.value;
+		int end;
+		int i = Find_Key(lines, setting.section, setting.key, end);
+		if (i >= 0) {
+			lines[i] = line;
+		} else if (end >= 0) {
+			lines.insert(lines.begin() + end, line);
+		} else {
+			lines.push_back("");
+			lines.push_back("[" + setting.section + "]");
+			lines.push_back(line);
+		}
+	}
+	FILE * f = fopen(CfgUnix, "w");
+	if (f == nullptr) {
+		return false;
+	}
+	for (std::string const & line : lines) {
+		fprintf(f, "%s\n", line.c_str());
+	}
+	return fclose(f) == 0;
+}
+
+/* --- the Choices window -------------------------------------------------------------------- */
+
+int ChoicesWindow = -1;
+int const ChoicesWidth = 1000;
+
+struct ChoiceSize { int w, h; char const * text; };
+ChoiceSize const Sizes[] = {{640, 480, "640 \xD7 480"}, {960, 720, "960 \xD7 720"}, {1280, 960, "1280 \xD7 960"}};
+int const SizeCount = 3;
+char const * const Cores[] = {"Pure interpreter (slowest)", "Cached interpreter", "Dynamic recompiler (fastest)"};
+
+// icon numbers
+enum {
+	IcoSizeLabel, IcoSize0, IcoSize1, IcoSize2, IcoFullScreen,
+	IcoCoreLabel, IcoCore2, IcoCore1, IcoCore0,
+	IcoSoundLabel, IcoSound,
+	IcoNote, IcoEdit, IcoCancel, IcoSave,
+	IcoCount
+};
+
+void Create_Choices_Window(void)
+{
+	static struct {
+		WindowBlock w;
+		Icon icons[IcoCount];
+	} block;
+	static char const title[] = "Mupen64Plus choices";
+	static char const radio_valid[] = "Sradiooff,radioon";
+	static char const option_valid[] = "Soptoff,opton";
+	static char const default_valid[] = "R6,3";
+	static char const action_valid[] = "R5,3";
+	static char const label_valid[] = "";
+	int const height = 724;
+	memset(&block, 0, sizeof(block));
+	block.w.behind = -1;
+	block.w.flags = 0x84000012;
+	unsigned char const colours[8] = {7, 2, 7, 1, 12, 14, 12, 0};
+	memcpy(block.w.colours, colours, sizeof(colours));
+	block.w.extent[1] = -height;
+	block.w.extent[2] = ChoicesWidth;
+	block.w.title_flags = 0x0000013D;
+	block.w.sprite_area = 1;
+	block.w.title.buffer = title;
+	block.w.title.validation = (char const *)-1;
+	block.w.title.length = sizeof(title);
+
+	unsigned const label = 0x17000111;		// text, vertically centred, indirected
+	unsigned const option = 0x17003113;		// text right of a sprite, vertically centred, indirected, click
+	unsigned const radio = 0x1700B113;		// the same, radio (button type 11); the ESG is added
+	int y = -24;
+	Indirected(block.icons[IcoSizeLabel], 24, y - 44, 600, y, label, "Window size", label_valid);
+	y -= 52;
+	for (int i = 0; i < SizeCount; i++) {
+		Indirected(block.icons[IcoSize0 + i], 64 + 300 * i, y - 44, 64 + 300 * i + 280, y, radio | (1 << 16),
+			Sizes[i].text, radio_valid);
+	}
+	y -= 52;
+	Indirected(block.icons[IcoFullScreen], 64, y - 44, ChoicesWidth - 32, y, option,
+		"Start in full screen (Alt+Enter switches while playing)", option_valid);
+	y -= 76;
+	Indirected(block.icons[IcoCoreLabel], 24, y - 44, 600, y, label, "Emulation", label_valid);
+	y -= 52;
+	for (int i = 0; i < 3; i++) {
+		Indirected(block.icons[IcoCore2 + i], 64, y - 44, ChoicesWidth - 32, y, radio | (2 << 16), Cores[2 - i],
+			radio_valid);
+		y -= 52;
+	}
+	y -= 24;
+	Indirected(block.icons[IcoSoundLabel], 24, y - 44, 600, y, label, "Sound", label_valid);
+	y -= 52;
+	Indirected(block.icons[IcoSound], 64, y - 44, ChoicesWidth - 32, y, option,
+		"Play sound (needs SharedSoundBuffer and StreamManager)", option_valid);
+	y -= 76;
+	Indirected(block.icons[IcoNote], 24, y - 44, ChoicesWidth - 24, y, label,
+		"These apply from the next game. Edit file opens all the settings.", label_valid);
+	y -= 76;
+	Indirected(block.icons[IcoEdit], 24, y - 68, 224, y, 0x1700313D, "Edit file", action_valid);
+	Indirected(block.icons[IcoCancel], ChoicesWidth - 456, y - 68, ChoicesWidth - 256, y, 0x1700313D, "Cancel",
+		action_valid);
+	Indirected(block.icons[IcoSave], ChoicesWidth - 232, y - 68, ChoicesWidth - 24, y, 0x1700313D, "Save",
+		default_valid);
+	block.w.icon_count = IcoCount;
+
+	_kernel_swi_regs regs;
+	regs.r[1] = (int)&block;
+	if (Swi(Wimp_CreateWindow, regs)) {
+		ChoicesWindow = regs.r[0];
+	}
+}
+
+void Select_Icon(int icon, bool on)
+{
+	int block[4] = {ChoicesWindow, icon, on ? 0x00200000 : 0, 0x00200000};
+	_kernel_swi_regs regs;
+	regs.r[1] = (int)block;
+	Swi(Wimp_SetIconState, regs);
+}
+
+bool Icon_Selected(int icon)
+{
+	int block[10] = {ChoicesWindow, icon};
+	_kernel_swi_regs regs;
+	regs.r[1] = (int)block;
+	return Swi(Wimp_GetIconState, regs) && (block[6] & 0x00200000) != 0;
+}
+
+// The settings shown: the ones waiting for the game to end, else the file's.
+void Show_Choices(void)
+{
+	Ensure_Cfg();
+	std::vector<std::string> lines = Read_Lines();
+	for (Setting const & setting : PendingSettings) {
+		int end;
+		int i = Find_Key(lines, setting.section, setting.key, end);
+		if (i >= 0) {
+			lines[i] = setting.key + " = " + setting.value;
+		}
+	}
+	int w = atoi(Get_Setting(lines, "Video-General", "ScreenWidth").c_str());
+	bool known = false;
+	for (int i = 0; i < SizeCount; i++) {
+		Select_Icon(IcoSize0 + i, Sizes[i].w == w);
+		known = known || Sizes[i].w == w;
+	}
+	if (!known) {
+		Select_Icon(IcoSize0, false);	// another size, set in the file: none of these ticked
+	}
+	Select_Icon(IcoFullScreen, Get_Setting(lines, "Video-General", "Fullscreen") == "True");
+	std::string core = Get_Setting(lines, "Core", "R4300Emulator");
+	int c = core.empty() ? 2 : atoi(core.c_str());
+	for (int i = 0; i < 3; i++) {
+		Select_Icon(IcoCore2 + i, (2 - i) == (c > 2 ? 2 : c));
+	}
+	Select_Icon(IcoSound, Get_Setting(lines, "UI-Console", "AudioPlugin") != "dummy");
+}
+
+void Open_Choices(void)
+{
+	if (ChoicesWindow < 0) {
+		Create_Choices_Window();
+	}
+	if (ChoicesWindow < 0) {
+		return;
+	}
+	Show_Choices();
+	int state[9] = {ChoicesWindow};
+	_kernel_swi_regs regs;
+	regs.r[1] = (int)state;
+	Swi(Wimp_GetWindowState, regs);
+	bool const open = (state[8] & 0x10000) != 0;
+	if (!open) {	// centred on the screen the first time it opens each time
+		int size[4];
+		static int const vars[] = {4, 5, 11, 12, -1};
+		regs.r[0] = (int)vars;
+		regs.r[1] = (int)size;
+		int screen_w = 1600, screen_h = 1200;
+		if (_kernel_swi(OS_ReadVduVariables, &regs, &regs) == nullptr) {
+			screen_w = (size[2] + 1) << size[0];
+			screen_h = (size[3] + 1) << size[1];
+		}
+		int const h = state[4] - state[2] > 0 ? state[4] - state[2] : 724;
+		state[1] = (screen_w - ChoicesWidth) / 2;
+		state[2] = (screen_h - h) / 2;
+		state[3] = state[1] + ChoicesWidth;
+		state[4] = state[2] + h;
+	}
+	state[7] = -1;
+	regs.r[1] = (int)state;
+	Swi(Wimp_OpenWindow, regs);
+}
+
+void Close_Choices(void)
+{
+	if (ChoicesWindow < 0) {
+		return;
+	}
+	int block[1] = {ChoicesWindow};
+	_kernel_swi_regs regs;
+	regs.r[1] = (int)block;
+	Swi(Wimp_CloseWindow, regs);
+}
+
+void Tell(std::string const & text, bool error);
+
+void Save_Choices(void)
+{
+	std::vector<Setting> settings;
+	for (int i = 0; i < SizeCount; i++) {
+		if (Icon_Selected(IcoSize0 + i)) {
+			settings.push_back({"Video-General", "ScreenWidth", std::to_string(Sizes[i].w)});
+			settings.push_back({"Video-General", "ScreenHeight", std::to_string(Sizes[i].h)});
+		}
+	}
+	settings.push_back({"Video-General", "Fullscreen", Icon_Selected(IcoFullScreen) ? "True" : "False"});
+	for (int i = 0; i < 3; i++) {
+		if (Icon_Selected(IcoCore2 + i)) {
+			settings.push_back({"Core", "R4300Emulator", std::to_string(2 - i)});
+		}
+	}
+	settings.push_back({"UI-Console", "AudioPlugin",
+		Icon_Selected(IcoSound) ? "\"mupen64plus-audio-sdl\"" : "\"dummy\""});
+	if (GameTask != 0) {
+		// the game writes the file when it quits: these go in after that
+		for (Setting const & setting : settings) {
+			bool replaced = false;
+			for (Setting & pending : PendingSettings) {
+				if (pending.section == setting.section && pending.key == setting.key) {
+					pending.value = setting.value;
+					replaced = true;
+				}
+			}
+			if (!replaced) {
+				PendingSettings.push_back(setting);
+			}
+		}
+		Close_Choices();
+		Tell("Saved. They apply from the next game (they're written to the settings file when this one ends).",
+			false);
+		return;
+	}
+	if (!Write_Settings(settings)) {
+		Tell("The settings file, <Choices$Write>.Mupen64Plus.mupen64plus/cfg, couldn't be written.", true);
+		return;
+	}
+	Close_Choices();
+}
+
+void Edit_Cfg(void)
+{
+	Ensure_Cfg();
+	Oscli("Filer_Run " + Os_Variable("Choices$Write") + ".Mupen64Plus.mupen64plus/cfg");
+	if (GameTask != 0) {
+		Tell("While a game is running, changes to the file can be lost: the emulator writes the file when the game "
+			"ends. Edit it between games.", false);
+	}
+}
+
+void Choices_Click(int icon, int buttons)
+{
+	if (icon == IcoFullScreen || icon == IcoSound) {
+		Select_Icon(icon, !Icon_Selected(icon));
+		return;
+	}
+	if (!(buttons & (4 | 1))) {
+		return;
+	}
+	if (icon == IcoSave) {
+		Save_Choices();
+	} else if (icon == IcoCancel) {
+		if (buttons & 1) {	// Adjust: back to what's saved, and stay open
+			Show_Choices();
+		} else {
+			Close_Choices();
+		}
+	} else if (icon == IcoEdit) {
+		Edit_Cfg();
+	}
+}
+
 /* --- the game ---------------------------------------------------------------------------- */
 
 void Play(std::string const & riscos_name)
@@ -561,10 +1024,6 @@ void Play(std::string const & riscos_name)
 	}
 	GameTask = regs.r[0];
 	GameRom = riscos_name;
-	// the emulator has an icon of its own (SDL's, with Quit), so this one goes while it runs
-	if (GameTask != 0) {
-		Remove_Icon();
-	}
 	Write_Last_Rom(riscos_name);
 	Close_Message();
 }
@@ -638,6 +1097,10 @@ void Poll_Loop(void)
 				Swi(Wimp_OpenWindow, regs);
 				break;
 			case 3:	// Close_Window_Request
+				if (block[0] == ChoicesWindow) {
+					Close_Choices();
+					break;
+				}
 				if (block[0] == MessageWindow) {
 					Message_Button(-1);
 					break;
@@ -658,6 +1121,10 @@ void Poll_Loop(void)
 					Message_Button(block[4]);
 					break;
 				}
+				if (block[3] == ChoicesWindow && ChoicesWindow >= 0) {
+					Choices_Click(block[4], block[2]);
+					break;
+				}
 				if (block[3] == -2 && block[4] == IconHandle) {
 					if (block[2] & 2) {
 						Open_Menu(block[0]);
@@ -667,11 +1134,40 @@ void Poll_Loop(void)
 				}
 				break;
 			case 9:	// Menu_Selection
-				if (block[0] == MenuQuit) {
-					return;
-				}
-				if (block[0] == MenuHelp) {
-					Open_Help();
+				switch (block[0]) {
+					case MenuQuit:
+						Send_Command("stop");	// the game too
+						return;
+					case MenuHelp:
+						Open_Help();
+						break;
+					case MenuChoices:
+						Open_Choices();
+						break;
+					case MenuSave:
+						Send_Command("save");
+						break;
+					case MenuLoad:
+						Send_Command("load");
+						break;
+					case MenuSlot:
+						if (block[1] >= 0 && block[1] <= 9) {
+							char command[8];
+							snprintf(command, sizeof(command), "slot %d", block[1]);
+							Send_Command(command);
+						}
+						break;
+					case MenuFullScreen:
+						Send_Command("fullscreen");
+						break;
+					case MenuPause:
+						Send_Command("pause");
+						break;
+					case MenuStop:
+						Send_Command("stop");
+						break;
+					default:
+						break;
 				}
 				{
 					int pointer[5];
@@ -691,6 +1187,15 @@ void Poll_Loop(void)
 				if (block[4] == 0x400C3 && GameTask != 0 && block[1] == GameTask) {	// Message_TaskCloseDown
 					fprintf(stderr, "launcher: the game has finished\n");
 					GameTask = 0;
+					Set_Variable("Mupen64Plus$Command", nullptr);
+					Set_Variable("Mupen64Plus$GameState", nullptr);
+					if (!PendingSettings.empty()) {	// Choices saved while it ran
+						if (!Write_Settings(PendingSettings)) {
+							Tell("The settings file, <Choices$Write>.Mupen64Plus.mupen64plus/cfg, couldn't be "
+								"written.", true);
+						}
+						PendingSettings.clear();
+					}
 					if (IconHandle < 0) {
 						Put_Icon_On_Bar();
 					}

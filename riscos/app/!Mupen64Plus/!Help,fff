@@ -8,8 +8,12 @@ RISC3D has one.
 Playing a game
 --------------
 Drop an N64 ROM on the icon bar icon: a .z64, .v64 or .n64 file, or a zip holding one.
-The game opens in a desktop window. Clicking the icon offers the last game played again.
-Close the window, or press Escape, to stop.
+The game opens in a desktop window; Alt+Enter switches to full screen and back. Clicking
+the icon offers the last game played again. Close the window, or press Escape, to stop.
+
+While a game runs, the icon's menu has its commands too: Save state, Load state, Slot (0-9,
+the ticked one is in use), Full screen, Pause and Stop game. The game's window can cover the
+icon bar: Shift+F12 brings it forward.
 
 You need your own ROMs: dump the cartridges you own. None come with this program.
 
@@ -27,7 +31,12 @@ The window must have the input focus (click on it). Other keys:
 
 Settings and saves
 ------------------
-In <Choices$Write>.Mupen64Plus: mupen64plus/cfg (the settings, a text file), Saves (game
+Choices... on the icon's menu sets the window size, full screen at the start, the emulation
+(the dynamic recompiler is the fast one) and sound. They apply from the next game. Its Edit
+file button opens all the settings: mupen64plus/cfg, a text file. Edit it between games, as
+the emulator writes it when a game ends (it keeps the save state slot there).
+
+All of it is in <Choices$Write>.Mupen64Plus: mupen64plus/cfg (the settings), Saves (game
 saves and save states), and stdout and stderr (the emulator's log).
 
 Needs
@@ -44,6 +53,9 @@ Known limits
 - On a Pi 4 with RISC OS 5.30, RISC3D's GPU driver (V3DRender 0.16) can't yet allocate the
   buffers it needs, so set LIBGL_ALWAYS_SOFTWARE to 1 to draw in software (slowly).
 - No joystick yet: the keyboard only.
+- Alt+Enter also presses Start in the game (Return is Start).
+- Full screen at a window size the screen has no mode for (960 x 720, say) shows the picture
+  in a corner of the nearest bigger mode.
 
 Licence
 -------

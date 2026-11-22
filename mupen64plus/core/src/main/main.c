@@ -382,6 +382,9 @@ void main_message(m64p_msg_level level, unsigned int corner, const char *format,
 void n64_check_pump_begin(void);   /* riscos-n64 test hooks (src/n64_check.c): time the pump */
 void n64_check_pump_end(void);
 #endif
+#ifdef __riscos__
+void riscos_desktop_poll(void);    /* riscos-n64: the launcher's menu commands (src/riscos_desktop.c) */
+#endif
 static void main_check_inputs(void)
 {
 #ifdef WITH_LIRC
@@ -393,6 +396,9 @@ static void main_check_inputs(void)
     SDL_PumpEvents();
 #ifdef M64P_STATIC_PLUGINS
     n64_check_pump_end();
+#endif
+#ifdef __riscos__
+    riscos_desktop_poll();
 #endif
 }
 

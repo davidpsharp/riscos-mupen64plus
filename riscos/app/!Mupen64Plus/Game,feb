@@ -17,5 +17,12 @@ CDir <Mupen64Plus$Dir>.Screenshots
 Set XDG_DATA_HOME /|<Choices$Write>/Mupen64Plus
 Set XDG_CACHE_HOME /|<Wimp$ScrapDir>
 
+| Test hooks' variables (src/n64_check.c) left over from a test run would change how it runs.
+Unset N64_*
+| The launcher's icon stays on the icon bar for the game (its menu has the game's commands), so
+| the emulator puts none of its own there; its commands come through Mupen64Plus$Command.
+Set Mupen64Plus$LauncherIcon 1
+Unset Mupen64Plus$Command
 WimpSlot -min 200000K -max 200000K
 Run <Mupen64Plus$Dir>.Mupen64 --configdir /<Choices$Write>/Mupen64Plus %*0 >/<Choices$Write>/Mupen64Plus/stdout 2>/<Choices$Write>/Mupen64Plus/stderr
+Unset Mupen64Plus$LauncherIcon
