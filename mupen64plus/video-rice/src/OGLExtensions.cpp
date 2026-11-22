@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Video.h"
 #include "m64p_types.h"
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__riscos__)
     static void APIENTRY EmptyFunc(void) { return; }
     #define INIT_EMPTY_FUNC(type, funcname) type funcname = (type) EmptyFunc;
     #define INIT_GL_FUNC(type, funcname) \
@@ -68,7 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     INIT_EMPTY_FUNC(PFNGLUNIFORM1FPROC,                glUniform1f)
     INIT_EMPTY_FUNC(PFNGLUNIFORM1IPROC,                glUniform1i)
     INIT_EMPTY_FUNC(PFNGLUSEPROGRAMPROC,               glUseProgram)
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__riscos__) /* riscos-n64: OSMesa exports them */
     // OSX already support OpenGL 2.1 functions.
 #else
     // Linux (OpenGL 1.3) and others
@@ -135,7 +135,7 @@ void OGLExtensions_Init(void)
     INIT_GL_FUNC(PFNGLUNIFORM1FPROC,                glUniform1f)
     INIT_GL_FUNC(PFNGLUNIFORM1IPROC,                glUniform1i)
     INIT_GL_FUNC(PFNGLUSEPROGRAMPROC,               glUseProgram)
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__riscos__) /* riscos-n64: OSMesa exports them */
     // empty
 #else
     INIT_GL_FUNC(PFNGLCREATESHADERPROC,             glCreateShader)

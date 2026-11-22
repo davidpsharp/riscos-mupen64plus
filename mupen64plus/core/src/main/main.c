@@ -1063,8 +1063,15 @@ static void pause_loop(void)
 
 /* called on vertical interrupt.
  * Allow the core to perform various things */
+#ifdef M64P_STATIC_PLUGINS
+void n64_check_vi(void); /* riscos-n64: src/n64_check.c */
+#endif
+
 void new_vi(void)
 {
+#ifdef M64P_STATIC_PLUGINS
+    n64_check_vi();
+#endif
 #if defined(PROFILE)
     timed_sections_refresh();
 #endif

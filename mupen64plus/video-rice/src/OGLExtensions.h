@@ -59,7 +59,7 @@ void OGLExtensions_Init(void);
     extern PFNGLUNIFORM1FPROC                 glUniform1f;
     extern PFNGLUNIFORM1IPROC                 glUniform1i;
     extern PFNGLUSEPROGRAMPROC                glUseProgram;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__riscos__) /* riscos-n64: OSMesa exports them */
     // nothing
 #else
     extern PFNGLCREATESHADERPROC              glCreateShader;
