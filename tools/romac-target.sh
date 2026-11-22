@@ -34,14 +34,13 @@ setup)
 		rm -rf "$data/hd4/!Boot/Resources/$d"
 		ditto "$mine/$d" "$data/hd4/!Boot/Resources/$d"
 	done
-	# Rorth: the newest release, its Config, and a PreDesk entry. crashdumps off: with Rorth's
-	# crash-dump hook on, GCC 10 programs die "EMT trap" at their first stack growth on RoMac
-	# (Rorth#28, fixed in 0.36.2: drop "crashdumps off" once that is in RORTH/dist)
+	# Rorth: the newest release (0.36.2 or later: crash dumps no longer break GCC 10 programs on
+	# RoMac, Rorth#28), its Config, and a PreDesk entry
 	rm -rf "$data/hd4/!Rorth"
 	python3 -I "$HOME/code/RORTH/tools/roszip.py" "$rorth_zip" "$data/hd4" >/dev/null
 	tok=$(python3 -c "import secrets; print(secrets.token_hex(12))")
 	cfg=$(ls "$data/hd4/!Rorth/"Config*)
-	printf 'port   %s\ntoken  %s\nallow  127.0.0.1\nname   %s\nrequirelease on\ncrashdumps off\n' \
+	printf 'port   %s\ntoken  %s\nallow  127.0.0.1\nname   %s\nrequirelease on\n' \
 		"$port" "$tok" "$target" > "$cfg"
 	pd="$data/hd4/!Boot/Choices/Boot/PreDesk"
 	mkdir -p "$pd"
