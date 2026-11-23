@@ -1,4 +1,6 @@
-/* How long SDL_Delay(n) really takes on RISC OS, and SDL_GetTicks's resolution. */
+/* How long SDL_Delay(n) really takes on RISC OS, and SDL_GetTicks's resolution.
+ *
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #include <stdio.h>
 #include <sys/time.h>
 #include <SDL.h>

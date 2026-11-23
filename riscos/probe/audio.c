@@ -1,5 +1,7 @@
 /* How fast SDL's RISC OS audio driver takes samples, with the main thread idle or busy.
- *   audioprobe [idle|busy] [samples]    plays silence at 44100 Hz for 10 s */
+ *   audioprobe [idle|busy] [samples]    plays silence at 44100 Hz for 10 s
+ *
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

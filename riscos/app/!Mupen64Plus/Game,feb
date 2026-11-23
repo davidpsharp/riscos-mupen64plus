@@ -1,6 +1,7 @@
 | Game for Mupen64Plus: run by the launcher (!RunImage) with a ROM's name (Unix form) to play it
 | in a desktop window. Arguments go to mupen64plus. Settings and saves are in
 | <Choices$Write>.Mupen64Plus; its output goes to stdout and stderr there.
+| RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 RMEnsure PThreadTicker 0.03 RMLoad <Mupen64Plus$Dir>.PThrTicker
 RMEnsure RISC3D 0.05 Error Mupen64Plus needs !RISC3D (RISC3D 0.05 or later) in !Boot.Resources, to draw with OpenGL
 

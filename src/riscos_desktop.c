@@ -14,7 +14,7 @@
  * program is linked with --wrap=_kernel_swi, and this declines SDL's Wimp_CreateIcon on the icon
  * bar: SDL then has icon -1 and never sees a click on one.
  *
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus.
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
  */
 #ifdef __riscos__
 

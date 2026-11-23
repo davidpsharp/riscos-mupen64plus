@@ -9,6 +9,8 @@
  * checks the guards and the texture's source after each frame. It prints the first corruption.
  *
  *   gl16 [frames] [w] [h]       (default 200 frames, 640 x 480)
+ *
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
  */
 #include <SDL.h>
 #include <SDL_opengl.h>

@@ -63,5 +63,6 @@ Known limits
 
 Licence
 -------
-mupen64plus is GPL version 2; this port is too. Source: (to come).
-Ported by David Sharp.
+mupen64plus is GPL version 2; this port is too.
+RISC OS port of Mupen64Plus: Copyright (C) 2026 David Sharp.
+Source: https://github.com/davidpsharp/riscos-mupen64plus

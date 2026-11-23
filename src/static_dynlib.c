@@ -6,7 +6,7 @@
  * points at the table. Opening any path whose last part starts with a plugin's name
  * opens that plugin; anything else opens the core.
  *
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus. */
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #include <stdlib.h>
 #include <string.h>
 

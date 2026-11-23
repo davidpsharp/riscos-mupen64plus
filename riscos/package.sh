@@ -3,6 +3,7 @@
 #   riscos/sdk.sh riscos/build.sh && riscos/sdk.sh riscos/package.sh
 # !RunImage is the launcher (icon bar; drop a ROM on it); Mupen64 is the emulator, started by
 # Game. The unstripped ELFs stay in build/riscos for ro-run dump --elf.
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 set -e
 cd /work
 A=build/riscos/app/!Mupen64Plus

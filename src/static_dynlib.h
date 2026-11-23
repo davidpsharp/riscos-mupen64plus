@@ -1,5 +1,7 @@
 /* mupen64plus's core and plugins linked into one program: dlopen's stand-in.
- * See tools/gen_static.py. */
+ * See tools/gen_static.py.
+ *
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #ifndef STATIC_DYNLIB_H
 #define STATIC_DYNLIB_H
 

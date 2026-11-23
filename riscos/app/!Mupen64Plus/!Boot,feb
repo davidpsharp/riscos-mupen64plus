@@ -1,3 +1,4 @@
 | !Boot for Mupen64Plus: the icon, and where the app is.
+| RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 If "<Mupen64Plus$Dir>"="" Then Set Mupen64Plus$Dir <Obey$Dir>
 IconSprites <Obey$Dir>.!Sprites

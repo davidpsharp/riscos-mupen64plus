@@ -1,5 +1,5 @@
 /* C library functions UnixLib lacks (RISC OS builds only).
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus. */
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #include <ctype.h>
 #include <stddef.h>
 #include <string.h>

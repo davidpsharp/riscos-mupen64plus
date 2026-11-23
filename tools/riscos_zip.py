@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 """riscos_zip.py - a zip of a RISC OS application that unpacks with its file types (docs/RISCOS_BUILD.md).
 
     riscos_zip.py OUT.zip MANIFEST

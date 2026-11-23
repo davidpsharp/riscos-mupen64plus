@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 """Writes src/gen/: what links mupen64plus's core and plugins into one program.
 
 mupen64plus loads its plugins with dlopen. RISC OS builds are static, and every plugin

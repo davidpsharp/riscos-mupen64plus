@@ -1,6 +1,9 @@
 # Provenance
 
 Upstream sources vendored unchanged on 2026-11-22 (our changes are on top, under `__riscos__`).
+Each changed upstream file says so after its licence header: the RISC OS port's changes are
+Copyright (C) 2026 David Sharp, GPL-2.0. Everything outside `mupen64plus/` and `third_party/`
+is the RISC OS port's own.
 
 | Folder | Upstream | Commit | Date | Licence |
 |---|---|---|---|---|

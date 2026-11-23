@@ -48,5 +48,7 @@ The host build, for headless tests on the Mac, is
 
 ## Licence
 
-GPL-2.0, as Mupen64Plus. The upstream sources are vendored at pinned commits; see
-[PROVENANCE.md](PROVENANCE.md).
+GPL-2.0, as Mupen64Plus ([COPYING](COPYING)). The RISC OS port (everything outside
+`mupen64plus/` and `third_party/`, and the `__riscos__` changes inside `mupen64plus/`) is
+Copyright (C) 2026 David Sharp. The upstream sources are vendored at pinned commits, with their
+own copyright notices; see [PROVENANCE.md](PROVENANCE.md).

@@ -2,3 +2,4 @@ work/
 build/
 private/
 .ro-run/
+.DS_Store

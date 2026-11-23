@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 """Make the !Mupen64Plus application sprites from riscos/icons/mupen64plus-icon.png (from riscos-doom3's tool, adapted from the OpenTS port).
 
 Writes two RISC OS sprite files (filetype &FF9) of 32-bit sprites with a mask, each holding

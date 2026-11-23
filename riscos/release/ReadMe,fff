@@ -12,4 +12,4 @@ In a 16M colour desktop mode it draws correctly. In a 64K colour mode (16 bpp), 
 shows the left half of the picture stretched to the full width, with the wrong colours. See
 docs/RISC3D-0.17-report.md in the riscos-mupen64plus repository.
 
-Source: riscos/probe/gl16.c. GPL-2.0, as the rest of the port.
+Source: riscos/probe/gl16.c. RISC OS port of Mupen64Plus: Copyright (C) 2026 David Sharp. GPL-2.0.

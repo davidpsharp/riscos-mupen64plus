@@ -1,6 +1,7 @@
 # The devkit's SDL 2.26, linked statically, with OpenGL through EGL and OSMesa (RISC3D
 # where a driver is loaded), and libMesaGPU so a native Pi 4 draws on its GPU too.
 # After riscos-quake3's (risc3d branch).
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 set(_devkit $ENV{RISCOS_DEVKIT})
 set(SDL2_VERSION 2.26.0)
 set(SDL2_INCLUDE_DIRS ${_devkit}/include/SDL2 ${_devkit}/include)

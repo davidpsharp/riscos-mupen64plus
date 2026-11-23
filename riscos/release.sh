@@ -6,6 +6,7 @@
 #   !Mupen64Plus            the app (build/riscos/app)
 #   Tests/gl16, Tests/RunGL16, Tests/ReadMe
 #                           the GL probe from docs/RISC3D-0.17-report.md (16 bpp desktops)
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 set -e
 cd "$(dirname "$0")/.."
 V=$(cat VERSION)

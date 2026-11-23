@@ -13,7 +13,7 @@
  * around Wimp_Poll) is riscos-doom3's launcher's, itself adapted from David Sharp's OpenTS RISC OS
  * port (port/riscos/desktop.cpp).
  *
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus.
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
  */
 #include <kernel.h>
 #include <swis.h>

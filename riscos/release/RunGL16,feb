@@ -1,6 +1,7 @@
 | gl16: draws a textured quad through SDL's GL window, checking the heap for stray writes.
 | Run it in a 64K colour mode and then a 16M colour mode, and compare the window: 8 red and
 | white squares across, on a blue background, is right. Output goes to Tests.gl16out.
+| RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 Dir <Obey$Dir>
 WimpSlot -min 64000K -max 64000K
 Run @.gl16 3000 > gl16out

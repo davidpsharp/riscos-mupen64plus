@@ -1,5 +1,6 @@
 #!/bin/sh
 # Builds work/stage/n64: what riscos/test/run-test runs, ready for `ro-run sync`.
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 set -e
 cd "$(dirname "$0")/../.."
 s=work/stage/n64

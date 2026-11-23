@@ -2,6 +2,7 @@
 | Arguments after the 5th go to mupen64plus. ROM from roms/, results in out/: <tag>-log (hashes), <tag>-png (framebuffer at VI 120),
 | <tag>-stdout, <tag>-stderr. Dummy video, audio and input unless a gfx plugin is given.
 | Sound: add --audio mupen64plus-audio-sdl. VIs 0 runs until the window is closed. Speed limiter off unless N64_LIMIT is set. Saves and caches go in user/ (XDG dirs, relative).
+| RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 Dir <Obey$Dir>
 If "<N64_LIMIT>"="" Then Set N64_NOLIMIT 1 Else Set N64_NOLIMIT 0
 Set N64_QUITVI %3

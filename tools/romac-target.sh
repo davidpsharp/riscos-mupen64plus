@@ -9,6 +9,7 @@
 #   tools/romac-target.sh status
 #
 # ROMAC_APP: the RoMac.app to run (default rol-run's build-mac, 0.1.229 or later: RISC3D is in the main line).
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 set -e
 repo=$(cd "$(dirname "$0")/.." && pwd)
 app=${ROMAC_APP:-$HOME/code/rol-run/build-mac/RoMac.app}

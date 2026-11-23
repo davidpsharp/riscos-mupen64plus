@@ -3,6 +3,7 @@
 #
 # Mac (host tests):  cmake -S . -B build/mac -G Ninja && ninja -C build/mac
 # RISC OS:           riscos/sdk.sh riscos/build.sh
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 cmake_minimum_required(VERSION 3.16)
 project(mupen64plus-riscos C CXX ASM)
 

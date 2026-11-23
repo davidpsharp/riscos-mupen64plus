@@ -14,7 +14,7 @@
  *                      and the rest (CPU emulation). Sums of clock differences, so a coarse clock
  *                      (centiseconds) still gives unbiased totals over many calls.
  *
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus. */
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

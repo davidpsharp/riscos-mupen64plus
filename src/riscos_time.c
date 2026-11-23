@@ -6,7 +6,7 @@
  * monotonic centisecond count plus how far the counter has got gives microseconds (as in the
  * riscos-doom3 and ioquake3 ports). Where there's no counter (OS_Hardware fails) it's centiseconds.
  *
- * Copyright (C) 2026 David Sharp. GPL-2.0, as mupen64plus. */
+ * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0. */
 #ifdef __riscos__
 #include <kernel.h>
 #include <swis.h>

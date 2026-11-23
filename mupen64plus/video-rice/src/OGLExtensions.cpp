@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+/* RISC OS port: changed by David Sharp, November 2026 (the __riscos__ parts).
+   Those changes Copyright (C) 2026 David Sharp, GPL-2.0. */
 
 /* This source file contains code for assigning function pointers to some OpenGL functions.
 */

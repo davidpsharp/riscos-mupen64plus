@@ -21,6 +21,8 @@
  *   Free Software Foundation, Inc.,                                       *
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* RISC OS port: changed by David Sharp, November 2026 (the __riscos__ parts).
+   Those changes Copyright (C) 2026 David Sharp, GPL-2.0. */
 
 /* This is MUPEN64's main entry point. It contains code that is common
  * to both the gui and non-gui versions of mupen64. See

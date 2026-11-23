@@ -3,6 +3,7 @@
 # place of the one it carries: EGL/OSMesa with RISC3D, and libMesaGPU for a native Pi 4.
 # Same recipe as riscos-quake3's risc3d branch.
 #   docker build --platform linux/amd64 -t n64-riscos riscos/docker
+# RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 FROM ghcr.io/adyoull/riscos-crossdev:1.11
 ARG MESA_DEVKIT=20.3.5-22
 ARG MESA_DEVKIT_SHA256=8559f004f13192b2d0438e0c9fe707057f49c0b24fe042ba7575c8ae31daf68f

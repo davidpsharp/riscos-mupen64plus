@@ -1,6 +1,7 @@
 | !Run for Mupen64Plus (Nintendo 64 emulator) on RISC OS: the launcher on the icon bar.
 | Drop an N64 ROM (.z64, .v64, .n64, or a zip of one) on its icon to play it in a desktop window.
 | The emulator itself is started by the launcher through the Obey file Game.
+| RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
 Set Mupen64Plus$Dir <Obey$Dir>
 IconSprites <Mupen64Plus$Dir>.!Sprites
 
