@@ -128,6 +128,10 @@ We haven't read riscos-mesa's EGL source, so the EGL half of this is from the ou
 `C16M`. `Tests.gl16out` records the pixel format SDL reports, the renderer, and any heap
 corruption it found.
 
+**Not just this program:** the riscos-dhewm3 port sees the same on RoMac at 1024x768 in 64K
+colours. Doom 3's main menu shows the left half at double width, with both its own patched SDL
+and the devkit's stock libSDL2.a.
+
 **Workaround for users:** a 16M colour desktop. The app's `!Help` will say so.
 
 ## 2. The 128 MB cap: same as Doom 3, both versions
