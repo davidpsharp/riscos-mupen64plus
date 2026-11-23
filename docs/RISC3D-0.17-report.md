@@ -92,25 +92,37 @@ On RoMac (GL renderer "Apple M3 Pro (RISC3D, Linux GPU)"):
 | ![](images/gl16-romac-16m.png) | ![](images/gl16-romac-64k-egl.png) |
 
 **What the 64K picture is:** only **4** squares across instead of 8, so the window shows the
-**left half** of the frame at **double width**. Neighbouring screen pixels alternate between two
-colours. The background's pixels, read from a full-size screenshot, alternate between
-(156, 165, 74) and (0, 242, 255). The clear colour (51, 77, 128) is the 32-bit word
-&FF804D33. Its low half &4D33 and high half &FF80, each decoded as a BGR565 pixel, are exactly
-those two colours. **So each 32-bit pixel of the GL frame lands on the screen as two 16-bit
-pixels, unconverted**: the frame is copied byte for byte, at 2 bytes a pixel, into a 16 bpp
-window.
+**left half** of the frame at **double width**, and neighbouring screen pixels alternate between
+two colours.
+
+**The screen's own memory confirms it** (`*ScreenSave` on the Pi 4, V3DRender 0.26, desktop
+1280x800 RGB565, so no screenshot decoding is involved). The gl16 window's background pixels
+are the 16-bit values **&4C33** and **&FF80**, alternating. The clear colour (0.2, 0.3, 0.5)
+as a 32-bit pixel is **&FF804C33**: those are its low and high halves. So **each 32-bit pixel of
+the GL frame is written to the 16 bpp screen as two 16-bit pixels, unconverted**: the frame is
+copied byte for byte into a window with 2 bytes a pixel. RoMac's 64K screenshots show the same
+pairs.
 
 With `SDL_RISCOS_GL_EGL 0`, or with `LIBGL_ALWAYS_SOFTWARE 1`, the pixel pairs go away, but the
-picture is still the left half at double width. It's also tinted wrong: the background is teal
-and the red squares go from grey to pink.
+picture is still the left half at double width, and its colours are wrong. We didn't check that
+path's colours in screen memory, because ro-run's screenshots of 16 bpp desktops don't decode
+colours reliably.
+
+**The sprite path has a candidate fix.** The riscos-half-life port (Xash3D) found that SDL's
+OSMesa sprite path (`SDL_riscosopengl.c`) renders a 32 bpp type 6 sprite and plots it on a 16 bpp
+desktop with no translation table. Its SDL patch `09-gl-in-64k-colour-modes.patch` renders
+`OSMESA_RGB_565` straight into a sprite in the screen's own mode in RGB565 modes, and it checked
+the patch on this Pi at 64K. The EGL path (RISC3D) needs its own fix: there, the 32-bit pixels
+are copied raw.
 
 ![gl16 in 64K colours with SDL_RISCOS_GL_EGL 0](images/gl16-romac-64k-sprite.png)
 
-**Where we think it is:** the code that puts a GL frame into a 16 bpp window. With RISC3D that
-is riscos-mesa's EGL window surface (`eglRedrawWindowRISCOS` and the swap). The sprite path is
-in SDL's `SDL_riscosopengl.c`. In both, the frame's width or pixel size seems to be taken from
-the screen mode (2 bytes a pixel) while the data is 4 bytes a pixel. We haven't read
-riscos-mesa's EGL source, so this is from the outside.
+**Where we think it is:**
+- With RISC3D: riscos-mesa's EGL window surface (`eglRedrawWindowRISCOS` and the swap). It copies
+  4-byte pixels into a 2-byte-a-pixel window without converting them.
+- The sprite path: SDL's `SDL_riscosopengl.c`, as above.
+
+We haven't read riscos-mesa's EGL source, so the EGL half of this is from the outside.
 
 **To reproduce:** `*WimpMode X1024 Y768 C64K`, then double-click `Tests.RunGL16`. Compare with
 `C16M`. `Tests.gl16out` records the pixel format SDL reports, the renderer, and any heap
@@ -148,6 +160,9 @@ a statically linked program like this one, meets the crash.
 - **A clean restart doesn't load ARMEABISupport.** A program started before anything else has
   loaded it fails with "SWI &59D01 not known". Our app's `!Run` loads it; this only bit our
   test scripts. Not RISC3D's, but worth a line in its docs for program authors.
+- **The release zip itself:** `!Mupen64Plus` from `riscos-mupen64plus-0.1.0.zip`, started
+  through its own Game file, plays Super Mario 64 on pi4-socrates's GPU with 0.17 in a 16M
+  colour desktop (0 resets, 0 MMU errors).
 - Rice's request for a 16-bit depth buffer gets 24 bits on V3D ("Failed to set GL_DEPTH_SIZE to
   16. (it's 24)"). That's harmless; noted in case it matters elsewhere.
 
