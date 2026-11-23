@@ -331,3 +331,26 @@ Not now (David's call when to pick them up):
 - pi5-octagon kernel question; GLideN64.
 - Pi 4 GPU: needs !MesaLibs in !Boot.Resources (23 Nov, section 9). It works by boot order
   (!MesaLibs before !RISC3D); V3DRender sizing its area to the cap would make it robust (Andy).
+- **Low-level RSP and RDP plugins, for libdragon and Tiny3D homebrew (experiment).** Modern
+  homebrew is built with libdragon, which runs its own RSP code (rspq) and sends RDP commands
+  directly, and Tiny3D uses its own microcode. HLE RSP and Rice only know Nintendo's
+  standard microcode (F3DEX/F3DEX2), so these games never draw. Tried on 23 Nov 2026:
+  - Junkrunner 64 (lambertjamesd/n64brew2025 v3.2.1, MIT) and the N64brew Game Jam 2024 ROM,
+    which includes Coin Rush (n64brew/N64brew-GameJam2024 1.2.1, MIT).
+  - On RISC OS, the dynarec stops with "Compile at bogus memory address: 8e0003c0". The
+    cached interpreter hung on RoMac.
+  - The Mac host build's interpreter makes no progress either (no VIs in 40 s), so it isn't
+    the ARM port.
+  - Tiny3D's examples (e.g. `12_uv_gen`, spherical UVs) have no prebuilt ROMs.
+
+  Candidates:
+  - RSP: mupen64plus-rsp-cxd4 (interpreter), or parallel-rsp (recompiler, x86/ARM64 lightning:
+    check ARMv7).
+  - RDP: angrylion-rdp-plus (software, exact, slow), or paraLLEl-RDP (Vulkan compute: no
+    Vulkan on RISC OS, so probably out).
+
+  Expect the software route to be far below full speed on a Pi 4; worth measuring.
+  - **Test ROMs:** libdragon's examples, Tiny3D's examples, Junkrunner 64 and the 2024 jam ROM.
+  - **Fix first:** the dynarec's 8e0003c0 failure, which is libdragon's IPL3/boot.
+  - **Known to work with Rice:** libultra/F3DEX2 homebrew such as megatextures
+    (lambertjamesd/n64brew2023).
