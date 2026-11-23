@@ -50,8 +50,10 @@ Needs
 
 Known limits
 ------------
-- On a Pi 4 with RISC OS 5.30, RISC3D's GPU driver (V3DRender 0.16) can't yet allocate the
-  buffers it needs, so set LIBGL_ALWAYS_SOFTWARE to 1 to draw in software (slowly).
+- On a Pi 4 with RISC OS 5.30, !MesaLibs must be in !Boot.Resources, not only somewhere on
+  the disc. At start-up it lifts RISC OS's 128 MB limit on memory areas before !RISC3D loads
+  the GPU driver; without that the driver gets only half its memory, and games stop with
+  "Failed to allocate device memory for BO". If you install !MesaLibs, restart.
 - No joystick yet: the keyboard only.
 - Alt+Enter also presses Start in the game (Return is Start).
 - Full screen at a window size the screen has no mode for (960 x 720, say) shows the picture

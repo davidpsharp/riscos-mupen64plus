@@ -253,6 +253,15 @@ V3DRender 0.16 reloaded, Rice draws Mario on the GPU ("V3D 4.2.14.0 - 2.1 Mesa 2
 the Pi restarts. The real fix is Andy's (V3DRender making its area at a size the OS allows, or
 !RISC3D lifting the cap before loading it); riscos-doom3 has reported it.
 
+**23 Nov 2026 (pi4-plato: no patches, no reload, just !MesaLibs at boot):** with riscos-mesa's
+!MesaLibs (devkit 20.3.5-22) in `!Boot.Resources`, a clean restart gives Mario on the GPU at
+154 VI/s, 0 BO errors, with the stock !RISC3D 0.05 / V3DRender 0.16. !MesaLibs' `!Boot` runs
+DAClamp, and Resources are booted in name order, so !MesaLibs lifts the 128 MB cap before
+!RISC3D loads V3DRender and makes its 256 MB area. Control: the same restart with !MesaLibs moved
+out: "Failed to allocate device memory for BO", then a crash (D3219). doom3's other two
+V3DRender patches (16k handles, no specific-page claims) aren't needed for Mario. plato is left
+with !MesaLibs installed. (A clean restart doesn't load ARMEABISupport; run-test now does.)
+
 **22 Nov 2026 (input):** keyboard control works on RoMac through input-sdl's default mapping
 (Return = Start, Shift = A, Ctrl = B, Z, arrows = stick; `data/InputAutoCfg.ini` is needed).
 Driven by `ro-run key`, Mario 64 goes through file select into the game and runs and jumps. SDL's
@@ -313,5 +322,5 @@ Not now (David's call when to pick them up):
 - Full screen at a size with no matching mode (960x720): centre the picture.
 - Alt+Enter also presses Start (Return is Start), as upstream.
 - pi5-octagon kernel question; GLideN64.
-- Pi 4 GPU: until !RISC3D/V3DRender is fixed, the GPU needs DAClamp then V3DRender reloaded
-  (see section 9); decide whether the app offers that.
+- Pi 4 GPU: needs !MesaLibs in !Boot.Resources (23 Nov, section 9). It works by boot order
+  (!MesaLibs before !RISC3D); V3DRender sizing its area to the cap would make it robust (Andy).
