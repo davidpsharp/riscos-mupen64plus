@@ -6,25 +6,11 @@ Mupen64Plus 2.6.0, with the Rice video plugin, runs on RISC OS 5 as a desktop ap
 through RISC3D. On a native Raspberry Pi 4 with **RISC3D 0.17 (RISC3D 0.09, V3DRender 0.26)** it
 runs Super Mario 64 on the GPU at well over the N64's full speed.
 
-The riscos-dhewm3 (Doom 3) port has written up the V3DRender items in detail:
-[its RISC3D 0.17 report](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md).
-This report doesn't repeat them. It adds what is different for the emulator, and one new issue:
-**a 16 bpp (64K colour) desktop shows every GL window garbled** (item 1 below).
-
-## Summary
-
-| # | Issue | Where | Effect on Mupen64Plus |
-|---|---|---|---|
-| 1 | In a 64K colour (16 bpp) desktop, a GL window shows the left half of the frame stretched to the full width, with wrong colours | riscos-mesa's SDL / EGL window code (devkit 20.3.5-22) | Unplayable in 64K colours; fine in 16M colours. Seen on the Pi 4 GPU, Pi 4 software Mesa, and RoMac |
-| 2 | V3DRender's buffer area is capped at 128 MB unless DAClamp runs first | V3DRender / !RISC3D | Every buffer of 64 KB+ refused, then a crash. Same in 0.16 and 0.17. Works when !MesaLibs is in `!Boot.Resources` |
-| 3 | 4,096 buffer handles per file | V3DRender | Not hit (Mario makes ~224 buffers) |
-| 4 | Imported memory moved under the GPU (hangs, frozen window) | V3DRender | Not hit with 0.16 or 0.17 |
-
-Items 2 to 4 are the Doom 3 report's
-[§2](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#2-the-128-mb-dynamic-area-cap-still-an-issue-though-boot-order-can-hide-it),
-[§1](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#1-buffer-handles-4096-per-file-is-too-few-the-blocker)
-and
-[§3](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#3-hangs-and-the-frozen-window-fixed-by-023).
+Summary for RISC3D's author, all three ports:
+[RISC3D-for-Andy.md](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-for-Andy.md).
+This file is the Mupen64Plus evidence; its item 1 (16 bpp) is new: **a 16 bpp (64K colour)
+desktop shows every GL window garbled**. The V3DRender items the emulator also meets are under
+[Also seen](#also-seen).
 
 ## What we ran
 
@@ -134,28 +120,22 @@ and the devkit's stock libSDL2.a.
 
 **Workaround for users:** a 16M colour desktop. The app's `!Help` will say so.
 
-## 2. The 128 MB cap: same as Doom 3, both versions
+## Also seen
 
-Covered in the Doom 3 report's
-[§2](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#2-the-128-mb-dynamic-area-cap-still-an-issue-though-boot-order-can-hide-it).
-For the record, the emulator's two cases, each from a clean restart:
+- **The 128 MB cap** ([Doom 3 §2](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#2-the-128-mb-dynamic-area-cap-still-an-issue-though-boot-order-can-hide-it)):
+  it crashes the emulator the same way. Each case from a clean restart:
 
-| | !MesaLibs in `!Boot.Resources` | !MesaLibs moved out |
-|---|---|---|
-| 0.16 (plato) | GPU, 154 VI/s, 0 buffer errors | "MESA: error: Failed to allocate device memory for BO" (5 times), then a data abort reading address 0 (at &0132C9FC in the program) |
-| 0.17 (socrates) | GPU, 169 VI/s, 0 buffer errors | the same: 5 "Failed to allocate device memory for BO", then the same data abort |
+  | | !MesaLibs in `!Boot.Resources` | !MesaLibs moved out |
+  |---|---|---|
+  | 0.16 (plato) | GPU, 154 VI/s, 0 buffer errors | "MESA: error: Failed to allocate device memory for BO" (5 times), then a data abort reading address 0 (at &0132C9FC in the program) |
+  | 0.17 (socrates) | GPU, 169 VI/s, 0 buffer errors | the same: 5 "Failed to allocate device memory for BO", then the same data abort |
 
-Our first fix was to run DAClamp and then reload RISC3D and V3DRender. Installing !MesaLibs, so
-its `!Boot` runs DAClamp before !RISC3D loads V3DRender, made that unnecessary. It does rest on
-the boot order, as the Doom 3 report says. A user who installs only !RISC3D, which is enough for
-a statically linked program like this one, meets the crash.
-
-## 3 and 4. Not hit
-
-- **Handles (Doom 3 §1):** Mario's title and intro made 224 buffers in all. Larger N64 games
-  may use more textures, but nothing like Doom 3's 5,000.
-- **Moved pages (Doom 3 §3):** no hangs, resets or MMU errors with 0.16 or 0.17. The emulator's
-  window updated throughout.
+  A user who installs only !RISC3D, enough for a statically linked program like this, meets
+  the crash.
+- **Handles** ([Doom 3 §1](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#1-buffer-handles-4096-per-file-is-too-few-the-blocker)): not
+  hit. Mario's title and intro made 224 buffers in all.
+- **Moved pages** ([Doom 3 §3](https://github.com/davidpsharp/riscos-dhewm3/blob/main/docs/RISC3D-0.17-report.md#3-hangs-and-the-frozen-window-fixed-by-023)): not hit. No
+  hangs, resets or MMU errors with 0.16 or 0.17.
 
 ## Smaller things
 
