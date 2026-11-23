@@ -1,0 +1,15 @@
+Tests for riscos-mupen64plus
+============================
+
+gl16 opens an SDL window with an OpenGL context, as the emulator's Rice video plugin does, and
+draws a textured quad: 32-pixel red and white squares, 8 across, with the red going to magenta
+from left to right, on a blue background. It runs for 3000 frames, then quits.
+
+Run it by double-clicking RunGL16. Its report (the desktop's pixel format, the GL renderer, and
+any heap corruption it found) is written to gl16out here.
+
+In a 16M colour desktop mode it draws correctly. In a 64K colour mode (16 bpp), the window
+shows the left half of the picture stretched to the full width, with the wrong colours. See
+docs/RISC3D-0.17-report.md in the riscos-mupen64plus repository.
+
+Source: riscos/probe/gl16.c. GPL-2.0, as the rest of the port.

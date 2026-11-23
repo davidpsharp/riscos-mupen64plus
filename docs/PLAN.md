@@ -262,6 +262,13 @@ out: "Failed to allocate device memory for BO", then a crash (D3219). doom3's ot
 V3DRender patches (16k handles, no specific-page claims) aren't needed for Mario. plato is left
 with !MesaLibs installed. (A clean restart doesn't load ARMEABISupport; run-test now does.)
 
+**23 Nov 2026 (RISC3D 0.17 / V3DRender 0.26, pi4-socrates):** Mario on the GPU at 163-169 VI/s,
+0 BO errors, 0 resets. The 128 MB cap is unchanged: without !MesaLibs in Resources, the same BO
+errors and crash as 0.16. New: **a 64K colour desktop garbles every GL window** (GPU, software
+Mesa and RoMac; 0.16 too): the frame's 32-bit pixels land unconverted as pairs of 16-bit pixels,
+the left half at double width. Shown with `riscos/probe/gl16.c`; it's riscos-mesa's SDL/EGL
+window code. Workaround: 16M colours (in !Help). Write-up for Andy: docs/RISC3D-0.17-report.md.
+
 **22 Nov 2026 (input):** keyboard control works on RoMac through input-sdl's default mapping
 (Return = Start, Shift = A, Ctrl = B, Z, arrows = stick; `data/InputAutoCfg.ini` is needed).
 Driven by `ro-run key`, Mario 64 goes through file select into the game and runs and jumps. SDL's

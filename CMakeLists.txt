@@ -204,6 +204,9 @@ if(N64_RISCOS)
   add_executable(audioprobe riscos/probe/audio.c)
   target_link_libraries(audioprobe PRIVATE ${SDL_TARGET})
   riscos_aif(audioprobe ${CMAKE_BINARY_DIR}/audioprobe,ff8)
+  add_executable(gl16 riscos/probe/gl16.c)
+  target_link_libraries(gl16 PRIVATE ${SDL_TARGET})
+  riscos_aif(gl16 ${CMAKE_BINARY_DIR}/gl16,ff8)
 endif()
 
 # ---- the desktop launcher (!Mupen64Plus.!RunImage): icon bar, Info, drop a ROM to play
