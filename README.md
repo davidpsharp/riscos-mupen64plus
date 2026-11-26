@@ -21,7 +21,9 @@ Andy Youll: [docs/RISC3D-0.17-report.md](docs/RISC3D-0.17-report.md).
 
 ## Download
 
-Home page: <https://davidsharp.com/riscos/n64>.
+Home page: <https://davidsharp.com/riscos/n64>. Questions and bug reports: raise an
+[issue](https://github.com/davidpsharp/riscos-mupen64plus/issues) or use the
+[contact page](https://davidsharp.com/contact/).
 
 - **PackMan:** add the source `https://davidsharp.com/riscos/pkg`, then install Mupen64Plus
   from the Emulation section. PackMan installs SharedUnixLibrary and ARMEABISupport too, and

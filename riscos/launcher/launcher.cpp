@@ -46,6 +46,8 @@ char const AppSprite[] = "!mupen64plus";
 char const AppName[] = "Mupen64Plus";
 char const AppPurpose[] = "Nintendo 64 emulator";
 char const AppAuthor[] = "The mupen64plus team";
+char const HomePage[] = "https://davidsharp.com/riscos/n64";
+int const InfoLinkIcon = 5;	// the Website field in the Info window: click to open HomePage
 
 bool Swi(int swi, _kernel_swi_regs & regs)
 {
@@ -116,32 +118,35 @@ void Create_Info_Window(void)
 	snprintf(version, sizeof(version), "%s (%d %.3s %s)", LAUNCHER_VERSION, day, date, date + 7);
 	static struct {
 		WindowBlock w;
-		Icon icons[10];
+		Icon icons[12];
 	} block;
 	static char const title[] = "About this program";
 	static char const field_valid[] = "R2";
 	memset(&block, 0, sizeof(block));
 	block.w.visible[0] = 392; block.w.visible[1] = 628;
-	block.w.visible[2] = 392 + 668; block.w.visible[3] = 628 + 308;
+	block.w.visible[2] = 392 + 668; block.w.visible[3] = 628 + 368;
 	block.w.behind = -1;
 	block.w.flags = 0x84000012;
 	unsigned char const colours[8] = {7, 2, 7, 1, 12, 14, 12, 0};
 	memcpy(block.w.colours, colours, sizeof(colours));
-	block.w.extent[1] = -308;
+	block.w.extent[1] = -368;
 	block.w.extent[2] = 668;
 	block.w.title_flags = 0x0000013D;
 	block.w.sprite_area = 1;
 	block.w.title.buffer = title;
 	block.w.title.validation = (char const *)-1;
 	block.w.title.length = sizeof(title);
-	char const * labels[5] = {"Name", "Purpose", "Author", "Ported by", "Version"};
-	char const * values[5] = {AppName, AppPurpose, AppAuthor, "David Sharp", version};
-	for (int row = 0; row < 5; row++) {
+	char const * labels[6] = {"Name", "Purpose", "Author", "Ported by", "Version", "Website"};
+	char const * values[6] = {AppName, AppPurpose, AppAuthor, "David Sharp", version,
+		HomePage + strlen("https://")};
+	for (int row = 0; row < 6; row++) {
 		int const top = -4 - 60 * row;
-		Indirected(block.icons[row], 184, top - 52, 660, top, 0x1700613D, values[row], field_valid);
-		Plain_Text(block.icons[5 + row], 8, top - 48, 184, top - 8, 0x17000211, labels[row]);
+		// the Website field is a link: dark blue text, and a click (button type 3) reports it
+		unsigned const flags = row == InfoLinkIcon ? 0x1800313D : 0x1700613D;
+		Indirected(block.icons[row], 184, top - 52, 660, top, flags, values[row], field_valid);
+		Plain_Text(block.icons[6 + row], 8, top - 48, 184, top - 8, 0x17000211, labels[row]);
 	}
-	block.w.icon_count = 10;
+	block.w.icon_count = 12;
 	_kernel_swi_regs regs;
 	regs.r[1] = (int)&block;
 	if (Swi(Wimp_CreateWindow, regs)) {
@@ -318,6 +323,46 @@ void Oscli(std::string const & command)
 	_kernel_swi_regs regs;
 	regs.r[0] = (int)command.c_str();
 	Swi(OS_CLI, regs);
+}
+
+// Opens HomePage in a web browser (riscos-kb lesson 2026-11-02): the URI
+// module if it's loaded; else the URL broadcast to a running browser; if that comes back
+// unclaimed, the URLOpen_https alias a browser sets when the Filer sees it (URL_Not_Taken).
+int const Message_URL = 0x4AF80;
+void Open_Home_Page(void)
+{
+	_kernel_swi_regs regs;
+	regs.r[0] = 0;
+	regs.r[1] = (int)HomePage;
+	regs.r[2] = TaskHandle;
+	if (_kernel_swi(0x4E381, &regs, &regs) == nullptr) {	// URI_Dispatch
+		return;
+	}
+	int message[64];
+	memset(message, 0, sizeof(message));
+	strcpy((char *)&message[5], HomePage);
+	message[0] = (20 + (int)strlen(HomePage) + 1 + 3) & ~3;
+	message[4] = Message_URL;
+	regs.r[0] = 18;	// User_Message_Recorded
+	regs.r[1] = (int)message;
+	regs.r[2] = 0;	// to every task
+	Swi(Wimp_SendMessage, regs);
+}
+
+void Tell(std::string const & text, bool error);
+
+void URL_Not_Taken(void)
+{
+	fprintf(stderr, "launcher: no browser took the URL message\n");
+	if (!Os_Variable("Alias$URLOpen_https").empty()) {
+		_kernel_swi_regs regs;
+		std::string const command = std::string("URLOpen_https ") + HomePage;
+		regs.r[0] = (int)command.c_str();
+		if (Swi(Wimp_StartTask, regs)) {
+			return;
+		}
+	}
+	Tell(std::string("No web browser is running or known to the Filer. The home page is ") + HomePage + ".", false);
 }
 
 enum Action { ACT_CLOSE, ACT_HELP, ACT_PLAY };
@@ -1125,6 +1170,12 @@ void Poll_Loop(void)
 					Choices_Click(block[4], block[2]);
 					break;
 				}
+				if (block[3] == InfoWindow && block[4] == InfoLinkIcon && (block[2] & (4 | 1))) {
+					Open_Home_Page();
+					regs.r[1] = -1;	// and close the menu the Info window hangs from
+					Swi(Wimp_CreateMenu, regs);
+					break;
+				}
 				if (block[3] == -2 && block[4] == IconHandle) {
 					if (block[2] & 2) {
 						Open_Menu(block[0]);
@@ -1177,6 +1228,11 @@ void Poll_Loop(void)
 					}
 				}
 				break;
+			case 19:	// User_Message_Acknowledge: a message came back unclaimed
+				if (block[4] == Message_URL) {
+					URL_Not_Taken();
+				}
+				break;
 			case 17: case 18:	// User_Message(_Recorded)
 				if (block[4] == 0) {	// Message_Quit
 					return;
@@ -1211,7 +1267,7 @@ void Poll_Loop(void)
 
 int main(int argc, char ** argv)
 {
-	int messages[] = {3, 0x400C3, 0};
+	int messages[] = {3, 0x400C3, Message_URL, 0};
 	_kernel_swi_regs regs;
 	regs.r[0] = 380;
 	regs.r[1] = 0x4B534154;

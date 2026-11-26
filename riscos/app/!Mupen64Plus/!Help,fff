@@ -5,6 +5,9 @@ A Nintendo 64 emulator: mupen64plus 2.6 (core, Rice video, HLE RSP, SDL audio an
 ported to RISC OS 5. It draws with OpenGL through Andy Youll's RISC3D, on the GPU where
 RISC3D has one.
 
+Home page: https://davidsharp.com/riscos/n64 (also a click away in the Info window).
+Contact (questions, bug reports): https://davidsharp.com/contact/
+
 Playing a game
 --------------
 Drop an N64 ROM on the icon bar icon: a .z64, .v64 or .n64 file, or a zip holding one.
