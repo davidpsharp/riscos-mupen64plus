@@ -19,4 +19,8 @@ cp mupen64plus/core/data/mupen64plus.ini "$A/Data/mupen64plus.ini,fff"
 cp mupen64plus/video-rice/data/RiceVideoLinux.ini "$A/Data/RiceVideoLinux.ini,fff"
 cp mupen64plus/input-sdl/data/InputAutoCfg.ini "$A/Data/InputAutoCfg.ini,fff"
 cp mupen64plus/core/doc/gpl-license "$A/Licence,fff"
+# The libraries built into Mupen64: riscos-mesa's devkit (Mesa, SDL2, zlib, UnixLib, ...) and libpng
+{ cat "$RISCOS_DEVKIT/LICENCES.txt"
+  printf '\n===========================================================================\n\nlibpng\n\n'
+  cat third_party/libpng/LICENSE; } > "$A/Licences,fff"
 ls -l "$A"

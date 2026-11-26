@@ -262,6 +262,13 @@ out: "Failed to allocate device memory for BO", then a crash (D3219). doom3's ot
 V3DRender patches (16k handles, no specific-page claims) aren't needed for Mario. plato is left
 with !MesaLibs installed. (A clean restart doesn't load ARMEABISupport; run-test now does.)
 
+**26 Nov 2026 (0.2.0: riscos-mesa 20.3.5-23, RISC3D 0.22):** devkit -23 (plain rebuild). RoMac:
+Mario (fb hash at VI 120 unchanged) and megatextures through the app; Info shows 0.2.0. Pi 4
+(socrates) with only !RISC3D 0.22 in Resources, no !MesaLibs: GPU, 164.5 VI/s, 256 MB buffer
+area, no errors, so the boot-order dependency is gone. 64K colour windows still garbled (-24).
+App ships `Licences` (devkit's LICENCES.txt + libpng). Release zips renamed for PackMan:
+`Mupen64Plus-riscos-<v>.zip` (app only) and `Mupen64Plus-tests-<v>.zip`; tag `riscos-v<v>`.
+
 **23 Nov 2026 (RISC3D 0.17 / V3DRender 0.26, pi4-socrates):** Mario on the GPU at 163-169 VI/s,
 0 BO errors, 0 resets. The 128 MB cap is unchanged: without !MesaLibs in Resources, the same BO
 errors and crash as 0.16. New: **a 64K colour desktop garbles every GL window** (GPU, software
@@ -329,8 +336,9 @@ Not now (David's call when to pick them up):
 - Full screen at a size with no matching mode (960x720): centre the picture.
 - Alt+Enter also presses Start (Return is Start), as upstream.
 - pi5-octagon kernel question; GLideN64.
-- Pi 4 GPU: needs !MesaLibs in !Boot.Resources (23 Nov, section 9). It works by boot order
-  (!MesaLibs before !RISC3D); V3DRender sizing its area to the cap would make it robust (Andy).
+- ~~Pi 4 GPU: needs !MesaLibs in !Boot.Resources~~ Fixed by RISC3D 0.22 (26 Nov, section 9).
+- 64K colour desktops: retest when riscos-mesa 20.3.5-24 is out (expected to fix it), then drop
+  the 16M colour note from !Help, README and the web page.
 - **Low-level RSP and RDP plugins, for libdragon and Tiny3D homebrew (experiment).** Modern
   homebrew is built with libdragon, which runs its own RSP code (rspq) and sends RDP commands
   directly, and Tiny3D uses its own microcode. HLE RSP and Rice only know Nintendo's

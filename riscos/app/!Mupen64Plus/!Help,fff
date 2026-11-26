@@ -43,17 +43,18 @@ Needs
 -----
 - RISC OS 5 on an ARMv7 machine with VFPv3 (a Raspberry Pi 2 or later), or RISC OS on Linux,
   or RoMac.
-- !RISC3D 0.05 or later and !MesaLibs (riscos-mesa 20.3.5-22 or later) in !Boot.Resources.
+- For OpenGL: !RISC3D in !Boot.Resources (0.22 or later on a Pi 4; restart after installing
+  it). It's from https://github.com/adyoull/riscos-risc3d/releases. !MesaLibs isn't needed:
+  the OpenGL libraries are built in.
 - SharedUnixLibrary and ARMEABISupport (from PackMan).
 - For sound: SharedSoundBuffer and StreamManager in !System. Without them it's silent.
 - About 200 MB of free memory.
 
 Known limits
 ------------
-- On a Pi 4 with RISC OS 5.30, !MesaLibs must be in !Boot.Resources, not only somewhere on
-  the disc. At start-up it lifts RISC OS's 128 MB limit on memory areas before !RISC3D loads
-  the GPU driver; without that the driver gets only half its memory, and games stop with
-  "Failed to allocate device memory for BO". If you install !MesaLibs, restart.
+- On a Pi 4 with a RISC3D older than 0.22, games stop with "Failed to allocate device memory
+  for BO" unless !MesaLibs is in !Boot.Resources too. Update RISC3D, or install !MesaLibs, and
+  restart.
 - Use a 16M colour desktop mode. In a 64K colour mode the game's picture comes out garbled
   (riscos-mesa's OpenGL window code, reported).
 - No joystick yet: the keyboard only.
@@ -63,6 +64,7 @@ Known limits
 
 Licence
 -------
-mupen64plus is GPL version 2; this port is too.
+mupen64plus is GPL version 2; this port is too (the text is in Licence). The libraries built
+into it (Mesa, SDL2, zlib, UnixLib, libpng and others) keep their own licences: see Licences.
 RISC OS port of Mupen64Plus: Copyright (C) 2026 David Sharp.
 Source: https://github.com/davidpsharp/riscos-mupen64plus

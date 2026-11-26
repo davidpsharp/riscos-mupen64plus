@@ -12,6 +12,22 @@ This file is the Mupen64Plus evidence; its item 1 (16 bpp) is new: **a 16 bpp (6
 desktop shows every GL window garbled**. The V3DRender items the emulator also meets are under
 [Also seen](#also-seen).
 
+## Status, 26 November 2026: RISC3D 0.22 and riscos-mesa 20.3.5-23
+
+Release 0.2.0 is built with the -23 devkit (a plain rebuild, no code changes) and was retested on
+pi4-socrates with RISC3D 0.22 (RISC3D 0.11, V3DRender 0.37):
+
+| # | Issue | Now |
+|---|---|---|
+| 1 | 64K colour desktops garble the GL window | **Still there** with -23: gl16 in 1280x800 RGB565 shows 4 squares across, striped. Expected to be fixed in -24 |
+| 2 | 128 MB cap without !MesaLibs | **Fixed.** With only !RISC3D 0.22 in `!Boot.Resources` (no !MesaLibs), Mario runs on the GPU at 164.5 VI/s; `*V3DRender` shows 262,144 KB of buffer memory, 0 resets, 0 MMU errors, 0 timeouts, 0 binner overflows, and no files open after quitting |
+| 3 | 4,096 buffer handles | Fixed in V3DRender 0.37 (tables grow to 65,535). Never hit by the emulator |
+| 4 | Moved pages | Still not hit |
+
+The frame at VI 120 is identical to RoMac's and to earlier runs (framebuffer hash `85476dc5`).
+The app's `!Help` and the README now ask for RISC3D 0.22 or later on a Pi 4, and no longer for
+!MesaLibs.
+
 ## What we ran
 
 - **The emulator:** Mupen64Plus 2.6.0 (core, Rice video, RSP HLE, SDL audio and input), built
