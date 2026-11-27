@@ -6,7 +6,7 @@ test ROM that shows the need. The RoMac agent (and David) decide.
 
 | # | Request | Why | Status |
 |---|---|---|---|
-| 1 | OpenGL ES 3.0 contexts in `romac-3d` | GLideN64's GLES 3 build (phase 6) | not sent: needed from phase 6 |
+| 1 | OpenGL ES 3.0 contexts in `romac-3d` | GLideN64's GLES 3 build (phase 6) | sent 2026-11-27 as a joint request with riscos-yabasanshiro (Saturn, ES 3.0), David agreed; write-up in `~/code/riscos-yabasanshiro/ports/saturn/romac-requests.md` |
 | 2 | (if measured) Tarmac behaviour under new_dynarec: cache thrash or `cacheflush` storms | dynarec speed on RoMac (phase 5) | not needed so far: the dynarec runs games above full speed |
 | 3 | Mac game controllers as RISC OS joysticks (`Joystick_Read`), details below | David's Xbox One controller (USB-C or Bluetooth) for mupen64plus on RoMac | sent 2026-11-22; superseded 2026-11-27 (see below) |
 

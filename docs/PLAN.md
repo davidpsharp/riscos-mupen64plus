@@ -326,6 +326,22 @@ Choices window with the cfg still editable, and save/load on the menu.
 Next: the joypad (waiting on RoMac request 3). (Choices for saves and settings, sound
 buffer defaults).
 
+**27 Nov 2026 (more games on pi4-socrates): a Pi-only segfault.** David's own dumps (also
+Lylat Wars, Perfect Dark, Turok 2, in `work/romzip`). On the Pi 4 (5.30, RISC3D 0.22):
+- Mario: Rice on the GPU, full speed with the limiter (59.3 VI/s); dummy video 8000 VIs fine.
+- GoldenEye and Lylat Wars: dummy video fine (8000 / 1200 VIs). GoldenEye with Rice and the
+  limiter: segfault at about VI 1450 (24 s).
+- Zelda: segfault in the first seconds with dummy video (dynarec), and after VI 300 on the
+  cached interpreter with Rice. Perfect Dark: the same with dummy video. Turok 2: not run yet.
+- The same binary runs Zelda on RoMac (1050 VI/s, dummy video). ARMEABISupport 1.05 and
+  SharedUnixLibrary 1.16 on both.
+- UnixLib's backtrace shows only the signal path: the frame's lr is in ARMEABISupport's code in
+  the RMA (its abort handler), so the faulting PC is hidden. After one crash every UnixLib
+  program dies at start ("recursion in the abort handler of ARMEABISupport") until a restart.
+- Next: get the faulting PC (a SIGSEGV handler that prints the context, or a Rorth dump with
+  ARMEABISupport out of the way), then suspect real-hardware alignment faults (unaligned
+  LDRD/STRD/LDM, which RoMac may not trap).
+
 ## 10. Backlog
 
 Not now (David's call when to pick them up):
