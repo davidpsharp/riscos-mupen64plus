@@ -1,0 +1,69 @@
+10 REM >pistrict: does this machine catch what a Pi 4 (RISC OS 5) catches?
+20 REM For RoMac request 4 (Pi-strict mode). Run: *BASIC -quit pistrict. On a Pi 4 (5.30):
+21 REM 1 fault, 2 old code ran (1 1 2), 3 the AP 5 call never returns. RoMac 28 Nov 2026: none.
+30 REM 1 alignment fault, 2 code changed without OS_SynchroniseCodeAreas, 3 execute-never.
+40 REM RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
+50 DIM code% 256, buf% 64, slot% 64
+60 FOR pass%=0 TO 2 STEP 2
+70   P%=code%
+80   [OPT pass%
+90   .ldru   ADD r1,r0,#1
+100          LDR r0,[r1]
+110          MOV pc,lr
+120   ]
+130 NEXT
+140 slot%=(slot%+31) AND NOT 31
+150 PRINT "CP15 control: ";FNcontrol
+170 :
+180 REM 1. Alignment. A Pi: abort (A=1). With A clear: &05040302.
+190 FOR i%=0 TO 7: buf%?i%=i%+1: NEXT
+200 r%=FNcall(ldru, buf%)
+210 IF e$<>"" THEN PRINT "1 alignment: fault (as a Pi): ";e$ ELSE PRINT "1 alignment: no fault, read &";~r%
+220 :
+230 REM 2. Stale code. Run MOV r0,#1, overwrite it with MOV r0,#2 without a sync, run again.
+240 REM A Pi: still 1 (the I-cache keeps the old code), then 2 after OS_SynchroniseCodeAreas.
+250 !slot%=&E3A00001: slot%!4=&E1A0F00E
+260 SYS "OS_SynchroniseCodeAreas",1,slot%,slot%+4
+270 a%=USR(slot%): a%=USR(slot%)
+280 !slot%=&E3A00002
+290 b%=USR(slot%)
+300 SYS "OS_SynchroniseCodeAreas",1,slot%,slot%+4
+310 c%=USR(slot%)
+320 IF b%=1 THEN PRINT "2 stale code: old code ran (as a Pi)"; ELSE PRINT "2 stale code: new code ran without a sync";
+330 PRINT " (";a%;" ";b%;" ";c%;")"
+340 :
+350 REM 3. Execute-never: MOV r0,#42 in a dynamic area with access privilege 5 (OS_Memory 17 on a
+355 REM Pi 4, 5.30: &36, user and privileged read/write, no execute), called from User mode.
+360 REM A Pi 4: the call never returns (a TaskWindow hangs; outside one, BASIC ends). So it goes last.
+370 PRINT "3 execute: app space ";FNexec(slot%)
+380 PRINT "3 execute-never: AP 5 is ";FNperm(5);". Calling it; on a Pi 4 nothing more is printed"
+390 SYS "OS_DynamicArea",0,-1,4096,-1,&85,4096,0,0,"PiStrict" TO ,da%,,base%
+400 r$=FNexec(base%)
+410 SYS "OS_DynamicArea",1,da%
+420 PRINT "3 execute-never: AP 5 ";r$;" (not as a Pi)"
+430 END
+440 :
+450 DEF FNexec(at%)
+460 LOCAL r%: LOCAL ERROR
+465 ON ERROR LOCAL: ="cannot write it: "+REPORT$
+470 !at%=&E3A0002A: at%!4=&E1A0F00E
+480 SYS "OS_SynchroniseCodeAreas",1,at%,at%+4
+490 r%=FNcall(at%, 0)
+500 IF e$<>"" THEN ="fault: "+e$
+510 IF r%=42 THEN ="runs" ELSE ="returned "+STR$r%
+515 :
+516 DEF FNperm(ap%)
+517 LOCAL p%: LOCAL ERROR
+518 ON ERROR LOCAL: ="unknown ("+REPORT$+")"
+519 SYS "OS_Memory",17,ap% TO ,,p%: ="&"+STR$~p%
+520 DEF FNcontrol
+521 LOCAL cr%: LOCAL ERROR
+522 ON ERROR LOCAL: ="OS_MMUControl fails: "+REPORT$
+523 SYS "OS_MMUControl",0,0,-1 TO ,cr%
+524 ="&"+STR$~cr%+" (A bit "+STR$((cr% AND 2) DIV 2)+")"
+525 :
+530 DEF FNcall(at%, A%)
+540 LOCAL ERROR
+550 e$=""
+560 ON ERROR LOCAL: e$=REPORT$+" (&"+STR$~ERR+")": =0
+570 =USR(at%)

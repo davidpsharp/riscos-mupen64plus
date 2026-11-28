@@ -9,7 +9,7 @@ test ROM that shows the need. The RoMac agent (and David) decide.
 | 1 | OpenGL ES 3.0 contexts in `romac-3d` | GLideN64's GLES 3 build (phase 6) | sent 2026-11-27 as a joint request with riscos-yabasanshiro (Saturn, ES 3.0), David agreed; write-up in `~/code/riscos-yabasanshiro/ports/saturn/romac-requests.md` |
 | 2 | (if measured) Tarmac behaviour under new_dynarec: cache thrash or `cacheflush` storms | dynarec speed on RoMac (phase 5) | not needed so far: the dynarec runs games above full speed |
 | 3 | Mac game controllers as RISC OS joysticks (`Joystick_Read`), details below | David's Xbox One controller (USB-C or Bluetooth) for mupen64plus on RoMac | sent 2026-11-22; superseded 2026-11-27 (see below) |
-| 4 | A Pi-strict mode: alignment faults, code written without a flush keeps running stale, execute-never, details below | RoMac passed code that crashes on a Pi 4 (riscos-half-life's save games; maybe our Pi-only dynarec crash); David wants RoMac representative enough for efficient testing | written 2026-11-28, David agreed |
+| 4 | A Pi-strict mode: alignment faults, code written without a flush keeps running stale, execute-never, details below | RoMac passed code that crashes on a Pi 4 (riscos-half-life's save games; maybe our Pi-only dynarec crash); David wants RoMac representative enough for efficient testing | sent 2026-11-28, David agreed; RoMac: after the RoMac/RoWin release, items 1 and 3 need Tarmac changes, `RUNWAY_PI_STRICT=1` |
 
 ## 4. A Pi-strict mode
 
@@ -51,6 +51,13 @@ replaced `__clear_cache` with ranged OS_SynchroniseCodeAreas calls still crashed
 flush is probably not its cause, but item 2 would settle it; if items 1-3 reproduce the crash on
 RoMac it can be debugged there in minutes instead of a reboot per run on the Pi. riscos-half-life's
 save game crash (a build without its alignment fix) is the case for item 1.
+
+**Checks, one per item:** `riscos/test/pistrict,fff` (BASIC text; `*BASIC -quit pistrict`; staged
+into `work/stage/n64`). On pi4-socrates (5.30), 28 Nov 2026: CP15 control &C53A3F; 1 faults
+("abort on data transfer"); 2 runs the old code (1 1 2); 3 (a dynamic area with access privilege
+5, &36 by OS_Memory 17: read/write, no execute) never returns, and the Pi may then need a restart.
+On RoMac the same day: OS_MMUControl is "SWI &6B not known", 1 reads &05040302, 2 runs the new
+code (1 2 2), and 3 runs.
 
 ## 3. Mac game controllers as RISC OS joysticks
 
