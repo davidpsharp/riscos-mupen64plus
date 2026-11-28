@@ -338,9 +338,17 @@ Lylat Wars, Perfect Dark, Turok 2, in `work/romzip`). On the Pi 4 (5.30, RISC3D 
 - UnixLib's backtrace shows only the signal path: the frame's lr is in ARMEABISupport's code in
   the RMA (its abort handler), so the faulting PC is hidden. After one crash every UnixLib
   program dies at start ("recursion in the abort handler of ARMEABISupport") until a restart.
-- Next: get the faulting PC (a SIGSEGV handler that prints the context, or a Rorth dump with
-  ARMEABISupport out of the way), then suspect real-hardware alignment faults (unaligned
-  LDRD/STRD/LDM, which RoMac may not trap).
+- 28 Nov: `src/riscos_align.c` (as riscos-half-life): SCTLR.A cleared while running
+  (`*Set Mupen64Plus$StrictAlign 1` to keep it), and a fatal signal prints the struct sigcontext.
+  It fixed riscos-yabasanshiro's identical Pi crash, but not ours. Zelda's context: pc = fault
+  address = 0x22xxxxxx (in a dynamic area, not app space), cpsr SVC, r1 0xA40000B8 every time;
+  the lr then is stale.
+- Zelda on the Pi, dummy video: pure interpreter 3000 VIs fine; cached interpreter 3000 VIs
+  fine; dynarec crashes in the first seconds. Cached interpreter + Rice crashed after VI 300.
+  So it needs the dynarec or Rice. Not the FPU rounding mode (tested with the core and the
+  dynarec never touching FPSCR: still crashes). An alignment-sanitized Mac build (interpreter)
+  reports no misaligned access in 3000 VIs.
+- Turok 2 (32 MB) runs 3000 VIs with the dynarec on the Pi (800 VI/s), so it isn't ROM size.
 
 ## 10. Backlog
 

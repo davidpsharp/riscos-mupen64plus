@@ -56,7 +56,7 @@ endif()
 set(COMMON_DEFS NDEBUG M64P_STATIC_PLUGINS)
 if(N64_RISCOS)
   add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/src/riscos_compat.h>")
-  set(RISCOS_SRC ${CMAKE_SOURCE_DIR}/src/riscos_compat.c ${CMAKE_SOURCE_DIR}/src/riscos_time.c)
+  set(RISCOS_SRC ${CMAKE_SOURCE_DIR}/src/riscos_compat.c ${CMAKE_SOURCE_DIR}/src/riscos_time.c ${CMAKE_SOURCE_DIR}/src/riscos_align.c)
   set(RISCOS_CORE_SRC ${CMAKE_SOURCE_DIR}/src/riscos_desktop.c)   # the launcher's commands
 endif()
 if(APPLE)
