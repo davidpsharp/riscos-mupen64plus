@@ -351,7 +351,7 @@ Lylat Wars, Perfect Dark, Turok 2, in `work/romzip`). On the Pi 4 (5.30, RISC3D 
 - Turok 2 (32 MB) runs 3000 VIs with the dynarec on the Pi (800 VI/s), so it isn't ROM size.
 - Cache coherence, 28 Nov: with every dynarec `__clear_cache` replaced by a ranged
   OS_SynchroniseCodeAreas (exact range, `N64_FULLFLUSH=2` in a throwaway build) Zelda still crashes
-  at once (this time pc 4, USR mode, r0 &022A6140 inside the code cache), so the toolchain's flush
+  at once (this time pc 4, USR mode, r0 &022A6140 in app space above g_dev), so the toolchain's flush
   range isn't it. A full synchronise per compiled block (`=1`) is too slow to test on 5.30: 32 VIs
   in 48 s and the Pi stops answering the network. Experiment reverted.
 - RoMac request 4 (`docs/romac-requests.md`): a Pi-strict mode (alignment faults, stale code
