@@ -372,6 +372,16 @@ EXPORT m64p_error CALL VidExt_SetVideoMode(int Width, int Height, int BitsPerPix
         if (l_RenderMode == M64P_RENDER_OPENGL)
         {
             l_pGLContext = SDL_GL_CreateContext(l_pWindow);
+#ifdef __riscos__
+            /* riscos-n64: say why there's no picture when there's no OpenGL (no RISC3D). */
+            if (l_pGLContext == NULL)
+            {
+                extern int riscos_warn_no_gpu(char const * renderer);
+                DebugMessage(M64MSG_ERROR, "SDL_GL_CreateContext failed: %s", SDL_GetError());
+                riscos_warn_no_gpu(NULL);
+                return M64ERR_SYSTEM_FAIL;
+            }
+#endif
             if (SDL_GL_MakeCurrent(l_pWindow, l_pGLContext) != 0)
             {
                 DebugMessage(M64MSG_ERROR, "SDL_GL_MakeCurrent failed: %s", SDL_GetError());

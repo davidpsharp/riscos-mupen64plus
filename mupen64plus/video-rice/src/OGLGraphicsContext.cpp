@@ -37,6 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "TextureManager.h"
 #include "Video.h"
 #include "version.h"
+#ifdef __riscos__
+extern "C" int riscos_warn_no_gpu(const char *renderer);   /* src/riscos_desktop.c */
+#endif
 
 COGLGraphicsContext::COGLGraphicsContext() :
     m_pExtensionStr(NULL)
@@ -161,6 +164,15 @@ bool COGLGraphicsContext::Initialize(uint32 dwWidth, uint32 dwHeight, BOOL bWind
     }
 
     DebugMessage(M64MSG_INFO, "Using OpenGL: %.60s - %.128s : %.60s", renderStr, versionStr, vendorStr);
+
+#ifdef __riscos__
+    /* riscos-n64: a box if this is software Mesa (no RISC3D); Quit ends the game here. */
+    if (riscos_warn_no_gpu((const char *)renderStr))
+    {
+        CoreVideo_Quit();
+        return false;
+    }
+#endif
 
 #ifdef __riscos__
     /* riscos-n64: riscos-mesa's EGL gives a single-buffered context, so drawing goes to the

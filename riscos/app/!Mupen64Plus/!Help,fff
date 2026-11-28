@@ -48,7 +48,8 @@ Needs
   or RoMac.
 - For OpenGL: !RISC3D in !Boot.Resources (0.22 or later on a Pi 4; restart after installing
   it). It's from https://github.com/adyoull/riscos-risc3d/releases. !MesaLibs isn't needed:
-  the OpenGL libraries are built in.
+  the OpenGL libraries are built in. Without RISC3D a box says so when a game starts: Continue
+  draws in software, far too slow to play; Quit stops.
 - SharedUnixLibrary and ARMEABISupport (from PackMan).
 - For sound: SharedSoundBuffer and StreamManager in !System. Without them it's silent.
 - About 200 MB of free memory.

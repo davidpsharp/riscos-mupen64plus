@@ -14,6 +14,10 @@
  * program is linked with --wrap=_kernel_swi, and this declines SDL's Wimp_CreateIcon on the icon
  * bar: SDL then has icon -1 and never sees a click on one.
  *
+ * And a warning when there's no 3D acceleration (riscos-kb app-conventions, 28 Nov 2026): without
+ * RISC3D, riscos-mesa falls back to software Mesa, far too slow for N64 games, or gives no
+ * OpenGL at all. riscos_warn_no_gpu() says so in a box.
+ *
  * RISC OS port of Mupen64Plus. Copyright (C) 2026 David Sharp. GPL-2.0.
  */
 #ifdef __riscos__
@@ -85,6 +89,55 @@ void riscos_desktop_poll(void)
         set_var(StateVar, state);
         strcpy(last_state, state);
     }
+}
+
+/* --- no 3D acceleration --------------------------------------------------------------- */
+
+static int software_renderer(char const * renderer)
+{
+    static char const * const names[] = { "Mesa OffScreen", "softpipe", "llvmpipe", "swrast", "Software Rasterizer" };
+    unsigned i;
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++)
+        if (strstr(renderer, names[i]))
+            return 1;
+    return 0;
+}
+
+/* renderer: GL_RENDERER, or NULL when no OpenGL context could be made. Returns 1 to quit.
+ * No box when the user asked for software (LIBGL_ALWAYS_SOFTWARE) or in a scripted test run
+ * (N64_QUITVI), which it would stop; N64_GPUWARN=1 shows it anyway (to test the box). */
+int riscos_warn_no_gpu(char const * renderer)
+{
+    static struct { int errnum; char errmess[252]; } err;
+    char const * force = getenv("N64_GPUWARN");
+    char const * soft = getenv("LIBGL_ALWAYS_SOFTWARE");
+    char const * quitvi = getenv("N64_QUITVI");
+    _kernel_swi_regs r;
+
+    if (renderer && !software_renderer(renderer))
+        return 0;
+    if (!(force && *force == '1')) {
+        if (renderer && soft && *soft && *soft != '0')
+            return 0;
+        if (quitvi && *quitvi && *quitvi != '0')
+            return 0;
+    }
+    err.errnum = 0;
+    strcpy(err.errmess, renderer
+        ? "No 3D acceleration was found: RISC3D is not installed or not working. Mupen64Plus can "
+          "draw in software, but games will be far too slow to play. Install RISC3D (from "
+          "PackMan) before use."
+        : "No OpenGL was found: RISC3D is not installed or not working, and Mupen64Plus needs it "
+          "to draw games. Install RISC3D (from PackMan), restart, and try again.");
+    r.r[0] = (int)&err;
+    r.r[1] = (1 << 8) | ((renderer ? 2 : 3) << 9);  /* new-style box; warning, or error */
+    r.r[2] = (int)"Mupen64Plus";
+    r.r[3] = (int)"!mupen64plus";
+    r.r[4] = 1;                                     /* R3 is a Wimp sprite */
+    r.r[5] = (int)(renderer ? "Continue,Quit" : "Quit");
+    if (_kernel_swi(Wimp_ReportError, &r, &r))
+        return renderer ? 0 : 1;
+    return renderer ? r.r[1] == 4 : 1;              /* Continue 3, Quit 4 (or the only button 3) */
 }
 
 /* --- no icon of SDL's own on the icon bar ----------------------------------------------- */
